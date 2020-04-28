@@ -1,0 +1,6 @@
+[submodule "src/include/hardware.inc"]
+	path = src/include/hardware.inc
+	url = https://github.com/gbdev/hardware.inc.git
+[submodule "src/include/rgbds-structs"]
+	path = src/include/rgbds-structs
+	url = https://github.com/ISSOtm/rgbds-structs.git
