@@ -203,7 +203,6 @@ ENDR
 
 	pop af ; Pop off return address as well to exit infinite loop
 .lagFrame
-	pop bc
 	pop af
 	ret
 
