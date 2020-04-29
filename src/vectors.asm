@@ -29,6 +29,7 @@ CallHL::
 	bit 7, h
 	error nz
 	jp hl
+	ds $10 - @
 
 ; Waits for the next VBlank beginning
 ; Requires the VBlank handler to be able to trigger, otherwise will loop infinitely
