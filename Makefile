@@ -58,7 +58,7 @@ $(RESDIR)/%.1bpp: $(RESDIR)/%.png
 # Compressor script requires Python 3
 $(RESDIR)/%.pb16 $(RESDIR)/%.pb16.size: $(RESDIR)/% $(SRCDIR)/tools/pb16.py
 	@$(MKDIR) -p $(@D)
-	$(SRCDIR)/tools/pb16.py $< $(RESDIR)/$*.pb16.size
+	$(SRCDIR)/tools/pb16.py $< $(RESDIR)/$*.pb16
 	echo 'NB_PB16_BLOCKS equ (' `wc -c $< | cut -d ' ' -f 1` ' + 15) / 16' > $(RESDIR)/$*.pb16.size
 
 # Define how to compress files using the PackBits8 codec
