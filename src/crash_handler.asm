@@ -155,9 +155,6 @@ INCLUDE "res/crash_font.1bpp.pb8.size"
 	ld c, 4
 	rst MemcpySmall
 
-	ld a, 1
-	ldh [rVBK], a
-
 	; We're now going to draw the screen, top to bottom
 	ld hl, vCrashDumpScreen
 
