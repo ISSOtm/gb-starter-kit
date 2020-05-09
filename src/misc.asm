@@ -99,7 +99,7 @@ SECTION "LCDMemcpy", ROM0
 ; @return de Pointer to byte after last copied one
 ; @return hl Pointer to byte after last written one
 ; @return bc 0
-; @return a Last byte copied
+; @return a 0
 ; @return f Z set, C reset
 LCDMemcpy::
 	wait_vram
@@ -112,15 +112,23 @@ LCDMemcpy::
 	jr nz, LCDMemcpy
 	ret
 
-SECTION "CallDE", ROM0
+SECTION "Memcpy", ROM0
 
-; Jumps to some address
-; All registers are passed to the target code intact, except Z is reset
-; (`jp CallDE` would be equivalent to `jp de` if that instruction existed)
-; Soft-crashes if attempting to jump to RAM
-; @param de The address of the code to jump to
-CallDE::
-	bit 7, d
-	push de
-	ret z ; No jumping to RAM, boy!
-	rst Crash
+; Copies a block of memory somewhere else
+; @param de Pointer to beginning of block to copy
+; @param hl Pointer to where to copy (bytes will be written from there onwards)
+; @param bc Amount of bytes to copy (0 causes 65536 bytes to be copied)
+; @return de Pointer to byte after last copied one
+; @return hl Pointer to byte after last written one
+; @return bc 0
+; @return a 0
+; @return f Z set, C reset
+Memcpy::
+	ld a, [de]
+	ld [hli], a
+	inc de
+	dec bc
+	ld a, b
+	or c
+	jr nz, Memcpy
+	ret
