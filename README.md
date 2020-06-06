@@ -30,7 +30,7 @@ If you get errors that you don't understand, try running `make clean`. If that g
 
 ## See also
 
-If you want something less barebones, already including some "base" code, check out [gb-starter-kit](https://github.com/ISSOtm/gb-starter-kit).
+If you want something more barebones, check out [gb-boilerplate](https://github.com/ISSOtm/gb-boilerplate).
 
 [Here](https://gist.github.com/ISSOtm/a9057e7c66080f36afcd82ed2863fd62) are the naming conventions used in this code; maybe you'll find them useful.
 
