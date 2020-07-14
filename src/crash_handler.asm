@@ -52,7 +52,7 @@ HandleCrash::
 	jr z, .bank0
 	; Oh noes. We need to copy the data across banks!
 	ld [vCrashDumpScreen], a ; Use this as a scratch byte
-	ld hl, vCrashSP
+	ld hl, vCrashAF
 	ld c, 5 * 2
 .copyAcross
 	ld b, [hl]
