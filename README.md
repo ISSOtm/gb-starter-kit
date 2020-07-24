@@ -4,7 +4,21 @@ A customizable and ready-to-compile bundle for Game Boy RGBDS projects. Contains
 
 ## Downloading
 
-You can simply clone the repository using Git, or if you just want to download this, click the `Clone or download` button up and to the right of this. This repo is also usable as a GitHub template for creating new repositories.
+Downloading this repository requires some extra care, due to it using submodules. (If you know how to handle them, nothing more is needed.)
+
+### Use as a template
+
+You can [make a new repository using this one as a template](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) or click the green "Use this template" button near the top-right of this page.
+
+### Cloning
+
+If cloning this repo from scratch, make sure to pass the `--recursive` flag to `git clone`; if you have already cloned it, you can use `git submodule update --init` within the cloned repo.
+
+If the project fails to build, and either `src/include/hardware.inc/` or `src/include/rgbds-structs/` are empty, try running `git submodule update --init`.
+
+### Download ZIP
+
+You can download a ZIP of this project by clicking the "Code" button next to the aforementioned green "Use this template" one. The resulting ZIP will however not contain the submodules, the files of which you will have to download manually.
 
 ## Setting up
 
@@ -40,4 +54,3 @@ I recommend the [BGB](https://bgb.bircd.org) emulator for developing ROMs on Win
 
 - [Variable-width font engine](https://github.com/ISSOtm/gb-vwf)
 - [structs in RGBDS](https://github.com/ISSOtm/rgbds-structs)
-
