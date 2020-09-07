@@ -51,9 +51,9 @@ Reset::
 	dec b
 	jr nz, .copyOAMDMA
 
-	; You will want to init palettes here
+	FAIL "Edit to set palettes here"
 	; CGB palettes maybe, DMG ones always
-	ld b, b
+
 	; You will also need to reset your handlers' variables below
 	; I recommend reading through, understanding, and customizing this file
 	; in its entirety anyways. This whole file is the "global" game init,
@@ -104,7 +104,6 @@ Reset::
 	ldh [hOAMHigh], a
 
 	; `Intro`'s bank has already been loaded earlier
-	rst $38
 	jp Intro
 
 SECTION "OAM DMA routine", ROMX
@@ -144,9 +143,9 @@ wShadowOAM::
 	ds NB_SPRITES * 4
 
 
-; If using banked WRAM, then you will get an error; replace $E000 with $D000
+FAIL "If not using banked WRAM, then replace $D000 with $E000 and delete this line"
 ; This ensures that the stack is at the very end of WRAM
-SECTION "Stack", WRAM0[$E000 - STACK_SIZE]
+SECTION "Stack", WRAM0[$D000 - STACK_SIZE]
 
 	ds STACK_SIZE
 wStackBottom:

@@ -30,11 +30,13 @@ Edit `project.mk` to customize most things specific to the project (like the gam
 
 Everything in the `src` folder is the source, and can be freely modified however you want. The basic structure in place should hint you at how things are organized. If you want to create a new "module", you simply need to drop a `.asm` file in the `src` directory, name does not matter. All `.asm` files in that root directory will be individually compiled by RGBASM.
 
-There is "basic" code in place, but some things need your manual intervention. Look for `ld b, b` instructions, there will be comments indicating what to put.
+There is "basic" code in place, but some things need your manual intervention. Things requiring manual intervention will print an error message describing what needs to be changed, and a line number.
 
 The file at `src/res/build_date.asm` is compiled individually to include a build date in your ROM. Always comes in handy, and displayed in the bundled error handler.
 
 If you want to add resources, I recommend using the `src/res` folder. Add rules in the Makefile; there are several examples.
+
+It is recommended that the start of your code be in `src/intro.asm`.
 
 ## Compiling
 
