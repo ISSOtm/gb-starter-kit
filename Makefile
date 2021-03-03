@@ -15,13 +15,27 @@ DEPDIR := dep
 RESDIR := res
 
 # Program constants
-MKDIR  := $(shell which mkdir)
+ifneq ($(shell which rm),)
+    # POSIX OSes
+    RM_RF := rm -rf
+    MKDIR_P := mkdir -p
+    PY :=
+else
+    # Windows outside of a POSIX env (Cygwin, MSYS2, etc.)
+    # We need Powershell to get any sort of decent functionality
+    $(warning Powershell is required to get basic functionality)
+    RM_RF := -del /q
+    MKDIR_P := -mkdir
+    PY := python
+    filesize = powershell Write-Output $$('NB_PB8_BLOCKS equ ' + [string] [int] (([IO.File]::ReadAllBytes('$1').Length + $2 - 1) / $2))
+endif
+
 # Shortcut if you want to use a local copy of RGBDS
-RGBDS   =
-RGBASM  = $(RGBDS)rgbasm
-RGBLINK = $(RGBDS)rgblink
-RGBFIX  = $(RGBDS)rgbfix
-RGBGFX  = $(RGBDS)rgbgfx
+RGBDS   :=
+RGBASM  := $(RGBDS)rgbasm
+RGBLINK := $(RGBDS)rgblink
+RGBFIX  := $(RGBDS)rgbfix
+RGBGFX  := $(RGBDS)rgbgfx
 
 ROM = $(BINDIR)/$(ROMNAME).$(ROMEXT)
 
@@ -41,6 +55,47 @@ include project.mk
 
 ################################################
 #                                              #
+#                    TARGETS                   #
+#                                              #
+################################################
+
+# `all` (Default target): build the ROM
+all: $(ROM)
+.PHONY: all
+
+# `clean`: Clean temp and bin files
+clean:
+	$(RM_RF) $(BINDIR)
+	$(RM_RF) $(OBJDIR)
+	$(RM_RF) $(DEPDIR)
+	$(RM_RF) $(RESDIR)
+.PHONY: clean
+
+# `rebuild`: Build everything from scratch
+# It's important to do these two in order if we're using more than one job
+rebuild:
+	$(MAKE) clean
+	$(MAKE) all
+.PHONY: rebuild
+
+################################################
+#                                              #
+#                GIT SUBMODULES                #
+#                                              #
+################################################
+
+# By default, cloning the repo does not init submodules
+# If that happens, warn the user
+# Note that the real paths aren't used!
+# Since RGBASM fails to find the files, it outputs the raw paths, not the actual ones.
+hardware.inc/hardware.inc rgbds-structs/structs.asm:
+	@echo 'hardware.inc is not present; have you initialized submodules?'
+	@echo 'Run `git submodule update --init`, then `make clean`, then `make` again.'
+	@echo 'Tip: to avoid this, use `git clone --recursive` next time!'
+	@exit 1
+
+################################################
+#                                              #
 #                RESOURCE FILES                #
 #                                              #
 ################################################
@@ -51,22 +106,28 @@ include project.mk
 VPATH := $(SRCDIR)
 
 $(RESDIR)/%.1bpp: $(RESDIR)/%.png
-	@$(MKDIR) -p $(@D)
+	@$(MKDIR_P) $(@D)
 	$(RGBGFX) -d 1 -o $@ $<
 
 # Define how to compress files using the PackBits16 codec
 # Compressor script requires Python 3
 $(RESDIR)/%.pb16 $(RESDIR)/%.pb16.size: $(RESDIR)/% $(SRCDIR)/tools/pb16.py
-	@$(MKDIR) -p $(@D)
-	$(SRCDIR)/tools/pb16.py $< $(RESDIR)/$*.pb16
+	@$(MKDIR_P) $(@D)
+	$(PY) $(SRCDIR)/tools/pb16.py $< $(RESDIR)/$*.pb16
+
+$(RESDIR)/%.pb16.size: $(RESDIR)/%
+	@$(MKDIR_P) $(@D)
 	echo 'NB_PB16_BLOCKS equ (' `wc -c $< | cut -d ' ' -f 1` ' + 15) / 16' > $(RESDIR)/$*.pb16.size
 
 # Define how to compress files using the PackBits8 codec
 # Compressor script requires Python 3
-$(RESDIR)/%.pb8 $(RESDIR)/%.pb8.size: $(RESDIR)/% $(SRCDIR)/tools/pb8.py
-	@$(MKDIR) -p $(@D)
-	$(SRCDIR)/tools/pb8.py $< $(RESDIR)/$*.pb8
-	echo 'NB_PB8_BLOCKS equ (' `wc -c $< | cut -d ' ' -f 1` ' + 7) / 8' > $(RESDIR)/$*.pb8.size
+$(RESDIR)/%.pb8: $(RESDIR)/% $(SRCDIR)/tools/pb8.py
+	@$(MKDIR_P) $(@D)
+	$(PY) $(SRCDIR)/tools/pb8.py $< $(RESDIR)/$*.pb8
+
+$(RESDIR)/%.pb8.size: $(RESDIR)/%
+	@$(MKDIR_P) $(@D)
+	$(call filesize,$<,8) > $(RESDIR)/$*.pb8.size
 
 ###############################################
 #                                             #
@@ -74,25 +135,9 @@ $(RESDIR)/%.pb8 $(RESDIR)/%.pb8.size: $(RESDIR)/% $(SRCDIR)/tools/pb8.py
 #                                             #
 ###############################################
 
-# `all` (Default target): build the ROM
-all: $(ROM)
-.PHONY: all
-
-# `clean`: Clean temp and bin files
-clean:
-	-rm -rf $(BINDIR) $(OBJDIR) $(DEPDIR) $(RESDIR)
-.PHONY: clean
-
-# `rebuild`: Build everything from scratch
-# It's important to do these two in order if we're using more than one job
-rebuild:
-	$(MAKE) clean
-	$(MAKE) all
-.PHONY: rebuild
-
 # How to build a ROM
 $(BINDIR)/%.$(ROMEXT) $(BINDIR)/%.sym $(BINDIR)/%.map: $(patsubst $(SRCDIR)/%.asm,$(OBJDIR)/%.o,$(SRCS))
-	@$(MKDIR) -p $(@D)
+	@$(MKDIR_P) $(@D)
 	$(RGBASM) $(ASFLAGS) -o $(OBJDIR)/build_date.o $(SRCDIR)/res/build_date.asm
 	$(RGBLINK) $(LDFLAGS) -m $(BINDIR)/$*.map -n $(BINDIR)/$*.sym -o $(BINDIR)/$*.$(ROMEXT) $^ $(OBJDIR)/build_date.o \
 	&& $(RGBFIX) -v $(FIXFLAGS) $(BINDIR)/$*.$(ROMEXT)
@@ -102,7 +147,7 @@ $(BINDIR)/%.$(ROMEXT) $(BINDIR)/%.sym $(BINDIR)/%.map: $(patsubst $(SRCDIR)/%.as
 # Caution: some of these flags were added in RGBDS 0.4.0, using an earlier version WILL NOT WORK
 # (and produce weird errors)
 $(OBJDIR)/%.o $(DEPDIR)/%.mk: $(SRCDIR)/%.asm
-	@$(MKDIR) -p $(dir $(OBJDIR)/$* $(DEPDIR)/$*)
+	@$(MKDIR_P) $(patsubst %/,%,$(dir $(OBJDIR)/$* $(DEPDIR)/$*))
 	$(RGBASM) $(ASFLAGS) -M $(DEPDIR)/$*.mk -MG -MP -MQ $(OBJDIR)/$*.o -MQ $(DEPDIR)/$*.mk -o $(OBJDIR)/$*.o $<
 
 ifneq ($(MAKECMDGOALS),clean)
