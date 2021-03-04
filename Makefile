@@ -20,7 +20,7 @@ ifneq ($(shell which rm),)
     RM_RF := rm -rf
     MKDIR_P := mkdir -p
     PY :=
-    filesize = echo 'NB_PB16_BLOCKS equ (' `wc -c $1 | cut -d ' ' -f 1` ' + $2 - 1) / $2'
+    filesize = echo 'NB_PB$2_BLOCKS equ (' `wc -c $1 | cut -d ' ' -f 1` ' + $2 - 1) / $2'
 else
     # Windows outside of a POSIX env (Cygwin, MSYS2, etc.)
     # We need Powershell to get any sort of decent functionality
@@ -28,7 +28,7 @@ else
     RM_RF := -del /q
     MKDIR_P := -mkdir
     PY := python
-    filesize = powershell Write-Output $$('NB_PB8_BLOCKS equ ' + [string] [int] (([IO.File]::ReadAllBytes('$1').Length + $2 - 1) / $2))
+    filesize = powershell Write-Output $$('NB_PB$2_BLOCKS equ ' + [string] [int] (([IO.File]::ReadAllBytes('$1').Length + $2 - 1) / $2))
 endif
 
 # Shortcut if you want to use a local copy of RGBDS
