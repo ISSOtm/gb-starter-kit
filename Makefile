@@ -20,6 +20,7 @@ ifneq ($(shell which rm),)
     RM_RF := rm -rf
     MKDIR_P := mkdir -p
     PY :=
+    filesize = echo 'NB_PB16_BLOCKS equ (' `wc -c $1 | cut -d ' ' -f 1` ' + $2 - 1) / $2'
 else
     # Windows outside of a POSIX env (Cygwin, MSYS2, etc.)
     # We need Powershell to get any sort of decent functionality
@@ -117,7 +118,7 @@ $(RESDIR)/%.pb16 $(RESDIR)/%.pb16.size: $(RESDIR)/% $(SRCDIR)/tools/pb16.py
 
 $(RESDIR)/%.pb16.size: $(RESDIR)/%
 	@$(MKDIR_P) $(@D)
-	echo 'NB_PB16_BLOCKS equ (' `wc -c $< | cut -d ' ' -f 1` ' + 15) / 16' > $(RESDIR)/$*.pb16.size
+	$(call filesize,$<,16) > $(RESDIR)/$*.pb16.size
 
 # Define how to compress files using the PackBits8 codec
 # Compressor script requires Python 3
