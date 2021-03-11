@@ -112,7 +112,7 @@ $(RESDIR)/%.1bpp: $(RESDIR)/%.png
 
 # Define how to compress files using the PackBits16 codec
 # Compressor script requires Python 3
-$(RESDIR)/%.pb16 $(RESDIR)/%.pb16.size: $(RESDIR)/% $(SRCDIR)/tools/pb16.py
+$(RESDIR)/%.pb16: $(RESDIR)/% $(SRCDIR)/tools/pb16.py
 	@$(MKDIR_P) $(@D)
 	$(PY) $(SRCDIR)/tools/pb16.py $< $(RESDIR)/$*.pb16
 
