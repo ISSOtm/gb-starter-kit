@@ -154,3 +154,8 @@ $(OBJDIR)/%.o $(DEPDIR)/%.mk: $(SRCDIR)/%.asm
 ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst $(SRCDIR)/%.asm,$(DEPDIR)/%.mk,$(SRCS))
 endif
+
+# Catch non-existent files
+# KEEP THIS LAST!!
+%:
+	@false
