@@ -117,19 +117,19 @@ SECTION "Handlers", ROM0[$40]
 	ds $48 - @
 
 ; STAT handler
-	reti
+	rst $38
 	ds $50 - @
 
 ; Timer handler
-	reti
+	rst $38
 	ds $58 - @
 
 ; Serial handler
-	reti
+	rst $38
 	ds $60 - @
 
 ; Joypad handler (useless)
-	reti
+	rst $38
 
 SECTION "VBlank handler", ROM0
 
