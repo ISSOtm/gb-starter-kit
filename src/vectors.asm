@@ -1,7 +1,8 @@
 
 INCLUDE "defines.asm"
 
-SECTION "Vectors", ROM0[0]
+SECTION "Rst $00", ROM0[$00]
+
 NULL::
 	; This traps jumps to $0000, which is a common "default" pointer
 	; $FFFF is another one, but reads rIE as the instruction byte
@@ -10,7 +11,8 @@ NULL::
 	nop
 	nop
 	rst Crash
-	ds $08 - @ ; 5 free bytes
+
+SECTION "Rst $08", ROM0[$08]
 
 ; Waits for the next VBlank beginning
 ; Requires the VBlank handler to be able to trigger, otherwise will loop infinitely
@@ -28,10 +30,13 @@ WaitVBlank::
 .wait
 	halt
 	jr .wait
-	ds $10 - 1 - @ ; 0 free bytes
+
+SECTION "Rst $10", ROM0[$10 - 1]
 
 MemsetLoop:
 	ld a, d
+
+	assert @ == $10
 ; You probably don't want to use this for writing to VRAM while the LCD is on. See LCDMemset.
 Memset::
 	ld [hli], a
@@ -41,7 +46,8 @@ Memset::
 	or c
 	jr nz, MemsetLoop
 	ret
-	ds $18 - @ ; 0 free bytes
+
+SECTION "Rst $18", ROM0[$18]
 
 MemcpySmall::
 	ld a, [de]
@@ -50,14 +56,16 @@ MemcpySmall::
 	dec c
 	jr nz, MemcpySmall
 	ret
-	ds $20 - @ ; 1 free byte
+
+SECTION "Rst $20", ROM0[$20]
 
 MemsetSmall::
 	ld [hli], a
 	dec c
 	jr nz, MemsetSmall
 	ret
-	ds $28 - 3 - @ ; 0 free bytes
+
+SECTION "Rst $28", ROM0[$28 - 3]
 
 ; Dereferences `hl` and jumps there
 ; All other registers are passed to the called code intact, except Z is reset
@@ -67,6 +75,8 @@ JumpToPtr::
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
+
+	assert @ == $28
 ; Jump to some address
 ; All registers are passed to the called code intact, except Z is reset
 ; (`jp CallHL` is equivalent to `jp hl`, but with the extra error checking on top)
@@ -76,8 +86,8 @@ CallHL::
 	bit 7, h
 	error nz
 	jp hl
-	ds $30 - @ ; 3 free bytes
 
+SECTION "Rst $30", ROM0[$30]
 
 ; Jumps to some address
 ; All registers are passed to the target code intact, except Z is reset
@@ -89,13 +99,15 @@ CallDE::
 	push de
 	ret z ; No jumping to RAM, boy!
 	rst Crash
-	ds $38 - @ ; 3 free bytes
+
+SECTION "Rst $38", ROM0[$38]
 
 ; Perform a soft-crash. Prints debug info on-screen
 Crash::
 	di ; Doing this as soon as possible to avoid interrupts messing up
 	jp HandleCrash
-	ds $40 - @
+
+SECTION "Handlers", ROM0[$40]
 
 ; VBlank handler
 	push af
