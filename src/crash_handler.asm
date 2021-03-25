@@ -27,9 +27,9 @@ HandleCrash::
 	ld a, LCDCF_ON ; Make sure the LCD is turned on to avoid waiting infinitely
 	ldh [rLCDC], a
 	ld a, IEF_VBLANK
-	ld [rIE], a
+	ldh [rIE], a
 	ld a, 0 ; `xor a` would overwrite flags
-	ld [rIF], a ; No point in backing up that register, it's always changing
+	ldh [rIF], a ; No point in backing up that register, it's always changing
 	halt ; With interrupts disabled, this will exit when `IE & IF != 0`
 	nop ; Handle hardware bug if it becomes true *before* starting to execute the instruction (1-cycle window)
 
@@ -46,7 +46,7 @@ HandleCrash::
 	ld a, [wCrashA]
 	push af
 	; We need to have all the data in bank 0, but we can't guarantee we were there
-	ld a, [rVBK]
+	ldh a, [rVBK]
 	ld [vCrashVBK], a
 	bit 0, a
 	jr z, .bank0
