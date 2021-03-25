@@ -92,6 +92,6 @@ error: MACRO
 		; This assembles to XX FF (with XX being the `jr` instruction)
 		; If the condition is fulfilled, this jumps to the operand: $FF
 		; $FF encodes the instruction `rst $38`!
-		jr \1, @-1
+		jr \1, @+1
 	ENDC
 ENDM
