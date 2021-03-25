@@ -397,7 +397,7 @@ INCLUDE "res/crash_font.1bpp.pb8.size"
 	xor LOW(vCrashDumpScreen.row5 + 47)
 	ld l, a
 	call .printDump
-	
+
 	; Now, let's highlight the selected dump region
 	ld a, [vWhichDump] ; 0 or 2
 	swap a ; 0 or 32
@@ -466,8 +466,8 @@ ENDR
 	ld a, e
 	sub 8
 	ld e, a
-	ld a, d
-	sbc 0
+	sbc a, d
+	add a, e
 	ld d, a
 .writeDumpLine
 	ld a, l
