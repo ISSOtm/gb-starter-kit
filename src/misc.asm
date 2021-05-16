@@ -59,13 +59,18 @@ LCDMemset::
 ; @return a 0
 ; @return f Z set, C reset
 LCDMemsetFromD::
+	; Increment B if C is non-zero
+	dec bc
+	inc b
+	inc c
+.loop
 	wait_vram
 	ld a, d
 	ld [hli], a
-	dec bc
-	ld a, b
-	or c
-	jr nz, LCDMemsetFromD
+	dec c
+	jr nz, .loop
+	dec b
+	jr nz, .loop
 	ret
 
 SECTION "LCDMemcpySmall", ROM0
@@ -102,14 +107,19 @@ SECTION "LCDMemcpy", ROM0
 ; @return a 0
 ; @return f Z set, C reset
 LCDMemcpy::
+	; Increment B if C is non-zero
+	dec bc
+	inc b
+	inc c
+.loop
 	wait_vram
 	ld a, [de]
 	ld [hli], a
 	inc de
-	dec bc
-	ld a, b
-	or c
-	jr nz, LCDMemcpy
+	dec c
+	jr nz, .loop
+	dec b
+	jr nz, .loop
 	ret
 
 SECTION "Memcpy", ROM0
@@ -124,11 +134,16 @@ SECTION "Memcpy", ROM0
 ; @return a 0
 ; @return f Z set, C reset
 Memcpy::
+	; Increment B if C is non-zero
+	dec bc
+	inc b
+	inc c
+.loop
 	ld a, [de]
 	ld [hli], a
 	inc de
-	dec bc
-	ld a, b
-	or c
-	jr nz, Memcpy
+	dec c
+	jr nz, .loop
+	dec b
+	jr nz, .loop
 	ret
