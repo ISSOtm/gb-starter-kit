@@ -466,8 +466,8 @@ ENDR
 	ld a, e
 	sub 8
 	ld e, a
-	sbc a, d
-	add a, e
+	sbc a, a
+	add a, d
 	ld d, a
 .writeDumpLine
 	ld a, l
