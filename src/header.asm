@@ -39,6 +39,7 @@ Reset::
 
 	ld sp, wStackBottom
 
+	assert BANK(OAMDMA) != 0, "`OAMDMA` is in ROM0, please remove this write to `rROMB0`"
 	ld a, BANK(OAMDMA)
 	; No need to write bank number to HRAM, interrupts aren't active
 	ld [rROMB0], a
@@ -72,6 +73,7 @@ Reset::
 
 	; Load the correct ROM bank for later
 	; Important to do it before enabling interrupts
+	assert BANK(Intro) != 0, "`Intro` is in ROM0, please write 1 to the bank registers instead"
 	ld a, BANK(Intro)
 	ldh [hCurROMBank], a
 	ld [rROMB0], a
