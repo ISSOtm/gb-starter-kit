@@ -13,7 +13,7 @@ OBJDIR := obj
 DEPDIR := dep
 
 # Program constants
-ifneq ($(shell which rm),)
+ifneq ($(strip $(shell which rm)),)
     # POSIX OSes
     RM_RF := rm -rf
     MKDIR_P := mkdir -p
