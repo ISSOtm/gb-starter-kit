@@ -145,15 +145,16 @@ $(BINDIR)/%.$(ROMEXT) $(BINDIR)/%.sym $(BINDIR)/%.map: $(patsubst src/%.asm,$(OB
 # Also add all obj dependencies to the dep file too, so Make knows to remake it
 # Caution: some of these flags were added in RGBDS 0.4.0, using an earlier version WILL NOT WORK
 # (and produce weird errors)
-$(OBJDIR)/%.o $(DEPDIR)/%.mk: src/%.asm
-	@$(MKDIR_P) $(patsubst %/,%,$(dir $(OBJDIR)/$* $(DEPDIR)/$*))
-	$(RGBASM) $(ASFLAGS) -M $(DEPDIR)/$*.mk -MG -MP -MQ $(OBJDIR)/$*.o -MQ $(DEPDIR)/$*.mk -o $(OBJDIR)/$*.o $<
+$(DEPDIR)/%.mk: src/%.asm
+	@$(MKDIR_P) $(patsubst %/,%,$(@D))
+	$(RGBASM) $(ASFLAGS) -M $@ -MG -MP -MQ $(OBJDIR)/$*.o -MQ $@ $<
+
+# It is crucial that the two steps are separate, otherwiseMake assumes that *both* are created
+# from running the recipe, even if they really aren't. Seem to affect Make 3.81, at least.
+$(OBJDIR)/%.o: src/%.asm
+	@$(MKDIR_P) $(patsubst %/,%,$(@D))
+	$(RGBASM) $(ASFLAGS) -MG -o $@ $<
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst src/%.asm,$(DEPDIR)/%.mk,$(SRCS))
 endif
-
-# Catch non-existent files
-# KEEP THIS LAST!!
-%:
-	@false
