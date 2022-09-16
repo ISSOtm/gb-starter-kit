@@ -18,7 +18,7 @@ ifneq ($(strip $(shell which rm)),)
     RM_RF := rm -rf
     MKDIR_P := mkdir -p
     PY :=
-    filesize = echo 'NB_PB$2_BLOCKS equ ((' `wc -c $1 | cut -d ' ' -f 1` ') + $2 - 1) / $2'
+    filesize = printf 'NB_PB$2_BLOCKS equ ((%u) + $2 - 1) / $2\n' "`wc -c <$1`"
 else
     # Windows outside of a POSIX env (Cygwin, MSYS2, etc.)
     # We need Powershell to get any sort of decent functionality
