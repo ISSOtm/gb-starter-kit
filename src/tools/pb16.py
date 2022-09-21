@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 PB16 encoder
 Copyright 2018 Damian Yerrick
