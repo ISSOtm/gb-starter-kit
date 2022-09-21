@@ -22,6 +22,8 @@ The memory views can be scrolled.
 This is initially locked to prevent accidental scrolling when the dump first appears or when photographing the screen.
 To unlock scrolling, hold the A and B Buttons for half a second.
 Then press Up and Down on the Control Pad to change the address by $10 bytes (two lines), hold the A Button and press the Control Pad to change it by $100 bytes, or press the B Button to switch focus between views.
+The address indicated by the corresponding `View:` is the address of the second row's leftmost byte.
+Despite what the spacing might suggest, bytes are displayed in order and not swapped.
 
 In a debugging emulator with exceptions on reading uninitialized memory, unlocking the memory views can cause continuous exceptions.
 To temporarily suppress these exceptions in bgb, use `Run > Run not this break` (Ctrl+F9).
