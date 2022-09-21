@@ -9,6 +9,9 @@ REPT STRLEN("{CHARS}")
 CHAR = CHAR + 1
 ENDR
 
+HEADER_WIDTH EQU 19
+HEADER_HEIGHT EQU 3
+
 SECTION "Crash handler", ROM0
 
 HandleCrash::
@@ -160,16 +163,16 @@ INCLUDE "res/crash_font.1bpp.pb8.size"
 
 	; First 3 lines of text
 	ld de, .header
-	ld b, 3
+	ld b, HEADER_HEIGHT
 .writeHeaderLine
 	ld a, " "
 	ld [hli], a
-	ld c, 19
+	ld c, HEADER_WIDTH
 	rst MemcpySmall
 	ld a, " "
 	ld [hli], a
 	ld a, l
-	add a, SCRN_VX_B - SCRN_X_B - 1
+	add a, SCRN_VX_B - HEADER_WIDTH - 2
 	ld l, a
 	dec b
 	jr nz, .writeHeaderLine
@@ -499,6 +502,8 @@ INCBIN "res/crash_font.1bpp.pb8"
 	db "GAME CRASH!! Please"
 	db "send a clear pic of"
 	db "this screen to devs"
+
+	assert @ - .header == HEADER_WIDTH * HEADER_HEIGHT
 
 	db " AF:"
 	db "  Model:"

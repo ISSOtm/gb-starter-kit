@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 PB8 encoder
 Copyright 2019 Damian Yerrick
