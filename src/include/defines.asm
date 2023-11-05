@@ -2,7 +2,7 @@
 ; First, let's include libraries
 
 INCLUDE "hardware.inc/hardware.inc"
-	rev_Check_hardware_inc 3.0
+	rev_Check_hardware_inc 4.0
 
 INCLUDE "rgbds-structs/structs.asm"
 
