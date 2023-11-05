@@ -9,13 +9,13 @@ rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(
 RM_RF := rm -rf
 MKDIR_P := mkdir -p
 PY :=
-filesize = printf 'NB_PB$2_BLOCKS equ ((%u) + $2 - 1) / $2\n' "`wc -c <$1`"
+filesize = printf 'def NB_PB$2_BLOCKS equ ((%u) + $2 - 1) / $2\n' "`wc -c <$1`"
 ifeq ($(strip $(shell which rm)),)
 	# Windows *really* tries its hardest to be Special™!
 	RM_RF := -del /q
 	MKDIR_P := -mkdir
 	PY := python
-	filesize = powershell Write-Output $$('NB_PB$2_BLOCKS equ ' + [string] [int] (([IO.File]::ReadAllBytes('$1').Length + $2 - 1) / $2))
+	filesize = powershell Write-Output $$('def NB_PB$2_BLOCKS equ ' + [string] [int] (([IO.File]::ReadAllBytes('$1').Length + $2 - 1) / $2))
 endif
 
 RGBDS   ?= # Shortcut if you want to use a local copy of RGBDS.
