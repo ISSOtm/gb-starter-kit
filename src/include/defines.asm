@@ -14,7 +14,7 @@ NB_SPRITES equ 40
 
 ; I generally discourage the use of pseudo-instructions for a variety of reasons,
 ; but this one includes a label, and manually giving them different names is tedious.
-wait_vram: MACRO
+MACRO wait_vram
 .waitVRAM\@
 	ldh a, [rSTAT]
 	and STATF_BUSY
@@ -24,7 +24,7 @@ ENDM
 ; `ld b, X` followed by `ld c, Y` is wasteful (same with other reg pairs).
 ; This writes to both halves of the pair at once, without sacrificing readability
 ; Example usage: `lb bc, X, Y`
-lb: MACRO
+MACRO lb
 	assert -128 <= (\2) && (\2) <= 255, "Second argument to `lb` must be 8-bit!"
 	assert -128 <= (\3) && (\3) <= 255, "Third argument to `lb` must be 8-bit!"
 	ld \1, (LOW(\2) << 8) | LOW(\3)
@@ -63,7 +63,7 @@ PAL_PRI   rb 1
 SGB_PACKET_SIZE equ 16
 
 ; sgb_packet packet_type, nb_packets, data...
-sgb_packet: MACRO
+MACRO sgb_packet
 PACKET_SIZE equ _NARG - 1 ; Size of what's below
 	db (\1 << 3) | (\2)
 	REPT _NARG - 2
@@ -84,7 +84,7 @@ STACK_SIZE equ $40
 ; I don't recommend using this unless you want a condition:
 ; `call cc, Crash` is 3 bytes (`cc` being a condition); `error cc` is only 2 bytes
 ; This should help minimize the impact of error checking
-error: MACRO
+MACRO error
 	IF _NARG == 0
 		rst Crash
 	ELSE
