@@ -116,7 +116,7 @@ ENDR
 	; Copy 1bpp font, compressed using PB8 by PinoBatch
 	ld hl, .font
 	ld de, $9000
-INCLUDE "res/crash_font.1bpp.pb8.size"
+INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld c, NB_PB8_BLOCKS
 	PURGE NB_PB8_BLOCKS
 .pb8BlockLoop
@@ -495,7 +495,7 @@ ENDR
 	ret
 
 .font
-INCBIN "res/crash_font.1bpp.pb8"
+INCBIN "assets/crash_font.1bpp.pb8"
 
 .header
 	;   0123456789ABCDEFGHI  19 chars
