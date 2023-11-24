@@ -12,7 +12,7 @@ PY :=
 filesize = printf 'def NB_PB$2_BLOCKS equ ((%u) + $2 - 1) / $2\n' "`wc -c <$1`"
 ifeq ($(strip $(shell which rm)),)
 	# Windows *really* tries its hardest to be Special™!
-	RM_RF := -del /q
+	RM_RF := -rmdir /s /q
 	MKDIR_P := -mkdir
 	PY := python
 	filesize = powershell Write-Output $$('def NB_PB$2_BLOCKS equ ' + [string] [int] (([IO.File]::ReadAllBytes('$1').Length + $2 - 1) / $2))
@@ -64,34 +64,34 @@ VPATH := src
 
 
 assets/%.1bpp: assets/%.png
-	@${MKDIR_P} ${@D}
+	@${MKDIR_P} "${@D}"
 	${RGBGFX} -d 1 -o $@ $<
 
 # Define how to compress files using the PackBits16 codec
 # Compressor script requires Python 3
 assets/%.pb16: assets/% src/tools/pb16.py
-	@${MKDIR_P} ${@D}
+	@${MKDIR_P} "${@D}"
 	${PY} src/tools/pb16.py $< assets/$*.pb16
 
 assets/%.pb16.size: assets/%
-	@${MKDIR_P} ${@D}
+	@${MKDIR_P} "${@D}"
 	$(call filesize,$<,16) > assets/$*.pb16.size
 
 # Define how to compress files using the PackBits8 codec
 # Compressor script requires Python 3
 assets/%.pb8: assets/% src/tools/pb8.py
-	@${MKDIR_P} ${@D}
+	@${MKDIR_P} "${@D}"
 	${PY} src/tools/pb8.py $< assets/$*.pb8
 
 assets/%.pb8.size: assets/%
-	@${MKDIR_P} ${@D}
+	@${MKDIR_P} "${@D}"
 	$(call filesize,$<,8) > assets/$*.pb8.size
 
 
 # How to build a ROM.
 # Notice that the build date is always refreshed.
 bin/%.${ROMEXT}: $(patsubst src/%.asm,obj/%.o,${SRCS})
-	@${MKDIR_P} ${@D}
+	@${MKDIR_P} "${@D}"
 	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
 	${RGBLINK} ${LDFLAGS} -m bin/$*.map -n bin/$*.sym -o $@ $^ \
 	&& ${RGBFIX} -v ${FIXFLAGS} $@
@@ -101,7 +101,7 @@ bin/%.${ROMEXT}: $(patsubst src/%.asm,obj/%.o,${SRCS})
 # Caution: some of these flags were added in RGBDS 0.4.0, using an earlier version WILL NOT WORK
 # (and produce weird errors).
 obj/%.mk: src/%.asm
-	@${MKDIR_P} ${@D}
+	@${MKDIR_P} "${@D}"
 	${RGBASM} ${ASFLAGS} -M $@ -MG -MP -MQ ${@:.mk=.o} -MQ $@ -o ${@:.mk=.o} $<
 # DO NOT merge this with the rule above, otherwise Make will assume that the `.o` file is generated,
 # even when it isn't!
