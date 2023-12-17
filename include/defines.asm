@@ -12,15 +12,6 @@ INCLUDE "rgbds-structs/structs.asm"
 def NB_SPRITES equ 40
 
 
-; I generally discourage the use of pseudo-instructions for a variety of reasons,
-; but this one includes a label, and manually giving them different names is tedious.
-MACRO wait_vram
-.waitVRAM\@
-	ldh a, [rSTAT]
-	and STATF_BUSY
-	jr nz, .waitVRAM\@
-ENDM
-
 ; `ld b, X` followed by `ld c, Y` is wasteful (same with other reg pairs).
 ; This writes to both halves of the pair at once, without sacrificing readability
 ; Example usage: `lb bc, X, Y`

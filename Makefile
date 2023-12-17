@@ -18,6 +18,19 @@ ifeq ($(strip $(shell which rm)),)
 	filesize = powershell Write-Output $$('def NB_PB$2_BLOCKS equ ' + [string] [int] (([IO.File]::ReadAllBytes('$1').Length + $2 - 1) / $2))
 endif
 
+ifeq (${OS},Windows_NT)
+# Parallel builds are broken on Windows.
+# Please see https://github.com/ISSOtm/gb-starter-kit/issues/1#issuecomment-1793775226 for details.
+.NOTPARALLEL: # Delete this line if you want to have parallel builds regardless!
+# Make doesn't have a good way to compare versions, so I'm just going to assume that nobody installs
+# a version from 2006 on their own ;)
+else ifeq (${MAKE_VERSION},3.81)
+# Parallel builds are broken with macOS' bundled version of Make.
+# Please consider installing Make from Homebrew (`brew install make`, **make sure to read the caveats**).
+# Please see https://github.com/ISSOtm/gb-starter-kit/issues/1#issuecomment-1793775226 for details.
+.NOTPARALLEL: # Delete this line if you want to have parallel builds regardless!
+endif
+
 RGBDS   ?= # Shortcut if you want to use a local copy of RGBDS.
 RGBASM  := ${RGBDS}rgbasm
 RGBLINK := ${RGBDS}rgblink

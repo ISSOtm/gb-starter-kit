@@ -28,7 +28,9 @@ LCDMemsetSmall::
 ; @return b Equal to a
 ; @return f Z set, C reset
 LCDMemsetSmallFromB::
-	wait_vram
+:	ldh a, [rSTAT]
+	and STATF_BUSY
+	jr nz, :-
 	ld a, b
 	ld [hli], a
 	dec c
@@ -64,7 +66,9 @@ LCDMemsetFromD::
 	inc b
 	inc c
 .loop
-	wait_vram
+:	ldh a, [rSTAT]
+	and STATF_BUSY
+	jr nz, :-
 	ld a, d
 	ld [hli], a
 	dec c
@@ -86,7 +90,9 @@ SECTION "LCDMemcpySmall", ROM0
 ; @return a Last byte copied
 ; @return f Z set, C reset
 LCDMemcpySmall::
-	wait_vram
+:	ldh a, [rSTAT]
+	and STATF_BUSY
+	jr nz, :-
 	ld a, [de]
 	ld [hli], a
 	inc de
@@ -112,7 +118,9 @@ LCDMemcpy::
 	inc b
 	inc c
 .loop
-	wait_vram
+:	ldh a, [rSTAT]
+	and STATF_BUSY
+	jr nz, :-
 	ld a, [de]
 	ld [hli], a
 	inc de
