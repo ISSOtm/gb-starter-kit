@@ -130,7 +130,7 @@ endif
 # Note that the real paths aren't used!
 # Since RGBASM fails to find the files, it outputs the raw paths, not the actual ones.
 hardware.inc/hardware.inc rgbds-structs/structs.asm:
-	@echo 'hardware.inc is not present; have you initialized submodules?'
+	@echo '$@ is not present; have you initialized submodules?'
 	@echo 'Run `git submodule update --init`, then `make clean`, then `make` again.'
 	@echo 'Tip: to avoid this, use `git clone --recursive` next time!'
 	@exit 1
