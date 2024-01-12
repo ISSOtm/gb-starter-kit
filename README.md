@@ -3,6 +3,9 @@
 A customizable and ready-to-compile bundle for Game Boy RGBDS projects.
 Contains your bread and butter, but guaranteed 100% kitchen sink-free.
 
+> [!WARNING]
+> Windows users: please use WSL! Due to a bug in Make, this project will **not** work outside of WSL!
+
 ## Downloading
 
 Downloading this repository requires some extra care, due to it using submodules.
