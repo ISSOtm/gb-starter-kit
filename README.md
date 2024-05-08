@@ -55,7 +55,7 @@ This should create a bunch of things, including the output in the `bin` director
 > While this project is able to compile under "bare" Windows (i.e. without using MSYS2, Cygwin, etc.), it requires PowerShell.
 
 Pass the `-s` flag to `make` if it spews too much input for your tastes.
-Päss the `-j <N>` flag to `make` to build more things in parallel, replacing `<N>` with however many things you want to build in parallel; your number of (logical) CPU cores is often a good pick (so, `-j 8` for me), run the command `nproc` to obtain it.
+Pass the `-j <N>` flag to `make` to build more things in parallel, replacing `<N>` with however many things you want to build in parallel; your number of (logical) CPU cores is often a good pick (so, `-j 8` for me), run the command `nproc` to obtain it.
 
 If you get errors that you don't understand, try running `make clean`.
 If that gives the same error, try deleting the `assets` directory.
