@@ -21,7 +21,7 @@ A newly created project shows a crash dump displaying the following:
 The memory views can be scrolled.
 This is initially locked to prevent accidental scrolling when the dump first appears or when photographing the screen.
 To unlock scrolling, hold the A and B Buttons for half a second.
-Then press Up and Down on the Control Pad to change the address by $10 bytes (two lines), hold the A Button and press the Control Pad to change it by $100 bytes, or press the B Button to switch focus between views.
+Then press Up and Down on the Control Pad to change the address by $10 bytes (two lines), hold the A Button and press the Control Pad to change it by $100 bytes, press the Start button to change it by 1 byte, or press the B Button to switch focus between views.
 The address indicated by the corresponding `View:` is the address of the second row's leftmost byte.
 Despite what the spacing might suggest, bytes are displayed in order and not swapped.
 
