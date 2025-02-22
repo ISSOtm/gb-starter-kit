@@ -22,7 +22,9 @@ jobs:
           path: master
           token: ${{ secrets.PAT }}
       - name: Tangle
-        run: notangle -RMakefile -t8 Makefile.nw >master/Makefile
+        run: |
+          notangle -RMakefile -t8 Makefile.nw >master/Makefile
+          notangle -Rproject.mk -t8 Makefile.nw >master/project.mk
       - name: Compute commit message
         id: msg
         run: printf 'header=%s\n' "$(git log -n1 --oneline)" | tee "$GITHUB_OUTPUT"
@@ -30,7 +32,9 @@ jobs:
         uses: EndBug/add-and-commit@v9
         with:
           cwd: master
-          add: Makefile
+          add: |
+            Makefile
+            project.mk
           message: |
             Update Makefile from `doc` branch
 

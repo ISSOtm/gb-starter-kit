@@ -445,6 +445,101 @@ What's the difference?
 A variable assigned with \texttt{:=} has its value \emph{immediately} computed; however, \texttt{=} instead has the variable's value computed each time it it referenced.
 In particular, this allows the variables to reference variables that don't exist yet (\texttt{PADVALUE} is defined after \texttt{ASFLAGS}, in \texttt{project.mk}).
 
+\subsection{Project-specific configuration}
+
+Let's detail the contents of that file.
+\href{https://rgbds.gbdev.io/docs/rgbfix.1}{The description of RGBFIX's options} can be useful to understand what all of these options do, and especially the syntax that they accept.
+
+\subsubsection{ROM header}
+
+The following control the various options passed to RGBFIX, which set \href{https://gbdev.io/pandocs/The_Cartridge_Header}{the fields of the ROM's header}.
+Emulators \emph{do} rely on some of these; but it can be cool to customise even the “useless” ones, since they show up here and there.
+Some people \emph{will} notice, and find it cute or clever!
+\\
+
+This is \href{https://gbdev.io/pandocs/The_Cartridge_Header#014c--mask-rom-version-number}{the ROM's version}.
+This typically starts at 0, and is incremented for each published version.
+<<project.mk>>=
+VERSION := 0
+@
+
+This is \href{https://gbdev.io/pandocs/The_Cartridge_Header#013f-0142--manufacturer-code}{the game's ID}, which should be 4 characters (preferably unaccented letters and/or digits).
+<<project.mk>>=
+GAMEID := BOIL
+@
+
+\href{https://gbdev.io/pandocs/The_Cartridge_Header#0134-0143--title}{The game's title} can be up to 11 characters, again preferably unaccented letters and/or digits.
+<<project.mk>>=
+TITLE := BOILERPLATE
+@
+
+These two control \href{https://gbdev.io/pandocs/The_Cartridge_Header#01440145--new-licensee-code}{the licensee code}, which should be two characters (like usual).
+You should keep \href{https://gbdev.io/pandocs/The_Cartridge_Header.html#014b--old-licensee-code}{the old code} at 0x33, as this is required \href{https://gbdev.io/pandocs/SGB_Unlocking}{to get SGB compatibility} (with no drawbacks).
+The default is meant to mean “\textbf{h}ome\textbf{b}rew game”! \twemoji{wink}
+<<project.mk>>=
+LICENSEE := HB
+OLDLIC := 0x33
+@
+
+The \href{https://gbdev.io/pandocs/The_Cartridge_Header#0147--cartridge-type}{cartridge type} controls the available features of the emulated cartridge, especially ROM and SRAM banking.
+You can get a list of valid values by running \texttt{rgbfix -m help}.
+(If using a no-MBC setup, consider enabling \texttt{-t} in \autoref{sec:compat-settings}.)
+<<project.mk>>=
+MBC := MBC5
+@
+
+This is the \href{https://gbdev.io/pandocs/The_Cartridge_Header#0149--ram-size}{size of the on-board SRAM}.
+It needs to be consistent with the MBC type above: this should be zero if and only if the MBC type doesn't include “RAM”\footnote{This indicates the size of a separate (“discrete”) RAM chip, so MBC2's built-in SRAM doesn't count and this should be set to 0.}, and vice-versa.
+<<project.mk>>=
+SRAMSIZE := 0x00
+@
+
+If you're wondering where the \href{https://gbdev.io/pandocs/The_Cartridge_Header#0148--rom-size}{ROM size} parameter is---that one is automatically computed by RGBFIX.
+
+\subsubsection{Compatibility settings}\label{sec:compat-settings}
+
+Uncomment any of these to apply them, or comment them to remove them; please refer to \href{https://rgbds.gbdev.io/docs/rgbasm.1}{RGBDS' documentation} (offline: \texttt{man 1 rgbasm})
+The defaults should be sensible for most projects, though.
+\\
+
+These two control \href{https://gbdev.io/pandocs/The_Cartridge_Header#0143--cgb-flag}{the Game Boy Color compatibility byte}.
+If your game is intended to run on GBC \emph{and} monochrome consoles (including possibly SGB), uncomment the \texttt{-c} line.
+If it is intended to run on GBC \emph{only}, then you should uncomment the \texttt{-C} line \textbf{and} still present some kind of fallback screen \href{https://gbdev.io/pandocs/CGB_Registers#detecting-cgb-and-gba-functions}{if detecting a non-Color Game Boy}: the monochrome consoles themselves \textbf{do not} check the header!
+<<project.mk>>=
+# FIXFLAGS += -c
+# FIXFLAGS += -C
+@
+
+This flag simply sets \href{https://gbdev.io/pandocs/The_Cartridge_Header#0146--sgb-flag}{the SGB compatibility flag}.
+<<project.mk>>=
+# FIXFLAGS += -s
+@
+
+If you only intend your game to run on monochrome systems, these two flags can be useful: they set up RGBDS' memory layout to be more convenient for you.
+<<project.mk>>=
+# LDFLAGS += -d
+# LDFLAGS += -w
+@
+
+And, finally, if you don't want to use a MBC, this sets RGBDS' memory layout in “tiny” mode, which is more appropriate and convenient for such projects.
+<<project.mk>>=
+# LDFLAGS += -t
+@
+
+\subsubsection{Miscellanea}
+
+This defines the value that the ROM will be filled with.
+The default value of \texttt{0xFF} is actually significant: it encodes the \texttt{rst \$38} instruction, which helps catch runaway execution (say, dereferencing a bad jump table index, or forgetting a \texttt{ret}...) by making it jump to \texttt{\$0038}, where a crash handler is located (by default).
+<<project.mk>>=
+PADVALUE := 0xFF
+@
+
+This sets the ROM's file name.
+<<project.mk>>=
+ROMNAME := boilerplate
+ROMEXT  := gb
+@
+
 \section{Overall structure}\label{sec:overall}
 
 Here is where we collect all the things we have seen thus far.
