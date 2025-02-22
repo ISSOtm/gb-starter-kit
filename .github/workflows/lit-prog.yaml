@@ -23,6 +23,9 @@ jobs:
           token: ${{ secrets.PAT }}
       - name: Tangle
         run: notangle -RMakefile -t8 Makefile.nw >master/Makefile
+      - name: Compute commit message
+        id: msg
+        run: printf 'header=%s\n' "$(git log -n1 --oneline)" | tee "$GITHUB_OUTPUT"
       - name: Push the modified Makefile
         uses: EndBug/add-and-commit@v9
         with:
@@ -31,7 +34,7 @@ jobs:
           message: |
             Update Makefile from `doc` branch
 
-            Built from commit $(git -C .. rev-parse HEAD)
+            Built from commit ${{ steps.msg.outputs.header }}
           default_author: user_info
           pathspec_error_handling: exitAtEnd
           push: true
