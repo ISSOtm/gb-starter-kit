@@ -1,0 +1,491 @@
+%!TEX root = doc.tex
+@
+\section{Build rules}
+
+\alertinfo{If you already know how a Makefile is structured, then you can skip ahead to \autoref{sec:assets}.}
+
+A Makefile's primary function is to describe how to build files from other files.
+Since it is \emph{descriptive} in nature (like HTML), and not \emph{imperative} like a programming language, Make (the program) is able to decide by itself how to perform the actual building optimally.
+
+In their purest form, build \textbf{rules} look a little something like this:
+\begin{pygmented}[lang=makefile]
+hello.o: hello.c hello.h
+	gcc -c -o hello.o hello.c
+\end{pygmented}
+Here's how to read the above snippet:
+\begin{mdframed}
+	The file \textbf{hello.o} is built from the files \textbf{hello.c} and \textbf{hello.h}.
+
+	To \emph{update} \textbf{hello.o}, the following command\textbf{s} should be run:
+	\begin{itemize}
+		\item \texttt{gcc -c -o hello.o hello.c}
+	\end{itemize}
+\end{mdframed}
+
+There's a lot to unpack here.
+First, a bit of terminology:
+\begin{itemize}
+	\item \texttt{hello.o} is called a \textbf{target}, since it's what the rule aims to describe.
+	\item \texttt{hello.c} and \texttt{hello.h} are called \textbf{prerequisites}, since they are necessary to build the “target”. You can also think of them as \emph{ingredients}.
+	\item And finally, the list of commands is called the \textbf{recipe}.
+\end{itemize}
+Also, Make is designed to avoid running commands that are superfluous; this helps keep build times low.
+Make determines that a file is “out of date” by \emph{comparing the time of the last modification} of itself, versus that of each of its dependencies.
+When Make determines that one of the \textbf{prerequisites} is “newer” than the \textbf{target} (or that the target doesn't exist at all), then the \textbf{recipe} is run.
+
+Now, let's tweak the rule a little, for some extra conveniences.
+
+For example, we might want to modify the C compiler we use, without having to search-and-replace in a lot of places in the Makefile (assuming there are many rules like this one).
+We can use \textbf{variables} for that.\footnote{It is possible to use parentheses instead of braces, but I've found it helpful to reserve braces for variables, since function calls (more on them later) require parentheses.}
+
+\begin{pygmented}[lang=makefile]
+CC := gcc
+
+hello.o: hello.c hello.h
+	${CC} -c -o hello.o hello.c
+\end{pygmented}
+
+Variables in Make work essentially as if you copy-pasted their contents wherever you reference them.
+You could write \pyginline[lang=makefile]|CC := gcc -g| and it would work.\footnote{This is part of why Make \emph{really} can't deal with whitespace in file names.}
+
+Another irk with that rule is that there is some repetition---the file names appear both in the first line and in the recipe!
+Thankfully, Make defines some \twemoji{sparkles}magic\twemoji{sparkles} variables that let us do away with that.
+They just... have \emph{weird} names.\footnote{Oh, and, braces are not necessary around a variable's name when it's a single character. So you can write \texttt{\$Q} as a shorthand for \texttt{\$\{Q\}} / \texttt{\$(Q)}, for example.}
+
+\begin{pygmented}[lang=makefile]
+hello.o: hello.c hello.h
+	${CC} -c -o $@ $<
+\end{pygmented}
+
+Here are the only four of these “automatic variables” you will probably ever need to know about:
+
+\begin{center}
+\begin{tabular}{ c | l }
+	\$@ & The rule's \emph{current} target \\ \hline
+	\$< & The first (leftmost) prerequisite \\ \hline
+	\$\^{} & \emph{All} of the prerequisites \\ \hline
+	\$* & The part of the file names matched by the \texttt{\%} character \\
+\end{tabular}
+\end{center}
+
+Ah, now's a good time to explain the \texttt{\%} character.
+See, what we've examined thus far is an \textbf{explicit} rule: it explicitly specifies how to build one\footnote{One or more, actually; but a finite number regardless.} file, and that's it.
+By contrast, an \textbf{implicit} rule describes how to make \emph{any} file matching some criteria.
+The most common type of implicit rule is what's known as a \textbf{pattern rule}:
+
+\begin{pygmented}[lang=makefile]
+%.o: %.c %.h
+	${CC} -c -o $@ $<
+\end{pygmented}
+
+This starts getting more complicated: instead of defining a rule that clearly states how to make specific file(s), we now have a rule that, broadly, states how to make a \emph{kind} of file.
+
+When trying to look up info on a file, Make first looks for an explicit rule stating how to make it.
+If there are none, then it tries all pattern rules one by one: for each, it tries to replace the \texttt{\%} in the target portion so that said portion matches the file's path.
+(There are some rules for choosing a specific one when multiple match at the same time, but if you want to get that technical, you should definitely start reading \href{https://www.gnu.org/software/make/manual/}{Make's documentation}.)
+
+Using automatic variables is largely a nicety when using explicit rules, but they become pretty much required when you start using implicit rules.
+\\
+
+There is, however, a \emph{very important} requirement for Make to accept an implicit rule as applicable: \textbf{all of its prerequisitites} must either already exist, or be able to be made (by explicit or implicit rules).
+This leads to a common source of confusion
+This causes, in particular, a commonly confusing error message, which we will illustrate using a little feline example.
+
+Let's pretend that we are in a directory containing the following Makefile:
+
+\begin{pygmented}[lang=makefile]
+%.meow: %.cat
+	printf '%s goes "meow!"\n' "$$(cat $<)" >$@
+
+%.gz: %
+	gzip <$< >$@
+\end{pygmented}
+
+...and that we run the following commands:
+
+\begin{pygmented}[lang=console]
+$ echo Pachatte >my.cat
+$ make my.meow.gz # Ignore the `rm my.meow' line for now.
+printf '%s goes "meow!"\n' "$(cat my.cat)" >my.meow
+gzip <my.meow >my.meow.gz
+rm my.meow
+$ zcat <my.meow.gz # `zcat' prints the contents of gzipped files.
+Pachatte goes "meow!"
+$ ls # Notice the lack of `no.cat'...
+Makefile  my.cat  my.meow.gz
+$ make no.meow.gz
+make: *** No rule to make target 'no.meow.gz'.  Stop.
+\end{pygmented}
+
+You might expect Make to complain that \texttt{no.cat} does not exist, rather than that it doesn't know how to make \texttt{no.meow.gz}.
+\emph{Clearly}, making a \texttt{.gz} file requires the corresponding file (\texttt{no.meow}), and that in turn \texttt{no.cat}!
+
+Unfortunately, this is not how things go.
+Since \texttt{no.cat} doesn't exist, Make rejects the first pattern rule, and decides that it doesn't know how to make \texttt{no.meow}.
+In turn, this causes it to reject the second pattern rule, and decide that it doesn't know how to make \texttt{no.meow.gz} either!
+
+\alertwarning{
+	\textbf{tl;dr}: If Make complains that it doesn't know how to make a file when it looks like there is a pattern rule that \emph{should} work: check that rule's prerequisites.
+}
+
+You can try passing the \texttt{-d} / \texttt{--debug} option to ask Make to “show its work”, but note that Make has a \textbf{ton} of built-in implicit rules that will create a lot of noise, so I recommend also passing the \texttt{-r} / \texttt{--no-builtin-rules}.
+
+Also, the \texttt{rm my.meow} command was inserted by Make itself, since it decided that \texttt{my.meow} is an intermediate file that doesn't need to be kept.
+\\
+
+Now, let's start looking at actual rules from the Makefile.
+
+\subsection{Asset rules}\label{sec:assets}
+
+Although these are probably not what you came here for, they are simpler than the assembling rules explained later, and so will serve as a more gentle introduction.
+
+\subsubsection{Graphics conversion}
+
+Both of these rules delegate the task to RGBGFX.
+
+<<Asset rules>>=
+assets/%.2bpp: assets/%.png
+	@mkdir -p "${@D}"
+	${RGBGFX} -o $@ $<
+
+assets/%.1bpp: assets/%.png
+	@mkdir -p "${@D}"
+	${RGBGFX} -d 1 -o $@ $<
+@
+These are almost identical, with the single difference that \texttt{.1bpp} files are converted with an additional \texttt{-d 1} option.
+
+What's new, is the \pyginline[lang=sh]|@mkdir -p "${@D}"| line.
+It creates the directory that the target will be created into; but how exactly does it do that?
+
+Let's begin with the \texttt{@} sign: it \emph{suppresses command echo}.
+If you have used Make, you probably noticed that it prints every command right before executing it.\footnote{If you find this annoying, you can pass the \texttt{-s} “silent” option to Make.}
+But this \texttt{mkdir} command is not really interesting, and you will see later that it's present \emph{everywhere}.
+Having it echoed all the time would pretty much drown out the commands we \emph{really} care about; so, we suppress it.
+
+On to the command itself: \texttt{mkdir} stands for “make directory”, and it pretty much does what it says on the tin.
+Now, \texttt{mkdir} has some interesting behaviour: by default, \texttt{mkdir a/b} errors out if \textbf{\texttt{a} doesn't exist}, and also if \textbf{\texttt{a/b} already exists}.
+The \texttt{-p} option, which can also be written as \texttt{--parents}, is designed to suppress the former behaviour (“create the directory I'm interested in, but also all of its parents as necessary”), but interestingly it \emph{also} suppresses the latter behaviour.
+
+And, finally, we should talk about that little \texttt{\$\{@D\}} nugget.
+(I will not go into detail about the quotes, because they are passed as-is by Make to the shell, and shell quoting is an entire rabbit hole that doesn't really belong here.)
+See, for each automatic variable (here, \texttt{\$@}, the short form of \texttt{\$\{@\}}), Make defines two extra variables: the one with an extra \texttt{D} contains the \textbf{d}irectory portion of its contents, and the one with an extra \texttt{F} contains the \textbf{f}ile portion.
+
+All this might have been a little too theoretical and confusing, so let's try making it more concrete.
+Say Make is trying to build a file located at \texttt{assets/player/running.2bpp}.
+Substituting the “pattern” (\texttt{\%}), we get:
+
+\begin{pygmented}[lang=makefile]
+assets/player/running.2bpp: assets/player/running.png
+	${RGBGFX} -o $@ $<
+\end{pygmented}
+
+And, replacing the automatic variables:
+
+\begin{pygmented}[lang=makefile]
+assets/player/running.2bpp: assets/player/running.png
+	${RGBGFX} -o assets/player/running.2bpp assets/player/running.png
+\end{pygmented}
+
+Now, picture a project that contains hundreds of \texttt{.png} files.
+Instead of having hundreds of bespoke rules, this one little rule can serve all of them!
+
+\subsubsection{Compression}
+
+Compression can be important, as one can run out of ROM size quicker than you'd expect.
+Smaller data also means it's easier to fit all of it in the same bank, and any bankswitch removed from code is always a win!
+
+Compression methods are a complex topic, so gb-starter-kit provides one that's known to be relatively easy to use \emph{and} compresses tile data reasonably well.
+
+<<Asset rules>>=
+assets/%.pb16: src/tools/pb16.py assets/%
+	@mkdir -p "${@D}"
+	$^ $@$
+@
+This rule contains a cheeky little trick: its use of \texttt{\$\^{}}.
+See, the first prerequisite is the script that needs to be executed to perform the compression, so after \texttt{\$\^{}} is expanded, it looks like \texttt{src/tools/pb16.py assets/player/running.2bpp \$@}---and this looks a lot like a command, doesn't it?
+
+Anyhow, this rule is a good occasion to talk about what I like to call “rule chaining”.
+For example, if you ask Make to \texttt{make assets/player/running.2bpp.pb16}, then the following happens:
+\begin{enumerate}
+	\item Make checks if \texttt{assets/player/running.2bpp.pb16} exists. (Let's pretend it does not.)
+	\item Make checks if it knows how to make that file. It finds the \texttt{assets/\%.2bpp} rule!
+	\begin{enumerate}
+		\item Make checks if \texttt{assets/player/running.2bpp} exists. (Let's pretend that one does not exist either.)
+		\item Make checks if it knows how to make that file. It finds the \texttt{assets/\%.png} rule!
+		\begin{enumerate}
+			\item Make checks if \texttt{assets/player/running.png} exists. It finds that file!
+		\end{enumerate}
+		\item Make now converts the \texttt{.png} file into \texttt{.2bpp}.
+	\end{enumerate}
+	\item Make now converts the \texttt{.2bpp} file into \texttt{.2bpp.pb16}.
+\end{enumerate}
+
+It's arguably a bit of an involved process, but that way, Make is able to run the last two steps in sequence, and creates \texttt{assets/player/running.2bpp.pb16} just from \texttt{assets/player/running.png}.
+I've seen people getting confused by the two steps involved in what can otherwise seem like a single operation (running \texttt{make} just once), so hopefully this can clear it up for you.
+
+<<Asset rules>>=
+assets/%.pb16.size: assets/%
+	@mkdir -p "${@D}"
+	printf 'def NB_PB16_BLOCKS equ ((%u) + 15) / 16\n' \
+	    "$$(wc -c <$<)" >assets/$*.pb16.size
+@
+\alertsuccess{The lone backslash (\texttt{\textbackslash}) is simply a line continuation character, because this line is \emph{really} long, and would overflow the box above otherwise!}
+
+Notice the \texttt{\$\$}: because we want that dollar sign to be interpreted by the shell, not by Make, we have to escape it... and that's done by doubling it\footnote{Internally, this is done by having a variable called \texttt{\$}, and whose contents are a single dollar sign. Yes, \texttt{\$\{\$\}} is valid, but why would you do that!?}.
+
+Then, we have pretty much a copy-paste of the above two, but for the PackBits\textbf{8} compression scheme.
+Where PB16 performs well on 2bpp tile data, PB8 does better on 1bpp tile data.
+
+<<Asset rules>>=
+assets/%.pb8: src/tools/pb8.py assets/%
+	@mkdir -p "${@D}"
+	$^ $@
+
+assets/%.pb8.size: assets/%
+	@mkdir -p "${@D}"
+	printf 'def NB_PB8_BLOCKS equ ((%u) + 7) / 8\n' \
+	    "$$(wc -c <$<)" >assets/$*.pb8.size
+@
+\subsubsection{VPATH}
+
+Now, as we will see later, the \texttt{assets/} directory gets entirely removed when running \texttt{make clean} (the “restart from scratch” command).
+Yet, as we've seen above, asset rules convert files in \texttt{assets/} into other files in \texttt{assets/}.
+Making two versions of each rule (one expecting files from \texttt{assets/}, and the other from \texttt{src/assets/}) is a possibility, but it would very annoying.
+<<VPATH>>=
+VPATH := src
+@
+This line sets the \texttt{VPATH} variable, which is special to Make: when it fails to find a file, it tries again by prepending \texttt{src/} to the path.
+So, assets not found in \texttt{assets/} are also looked for in \texttt{src/assets/}, which is \emph{not} cleared by \texttt{make clean}!
+
+\subsection{Assembly rules}
+
+Let's get to business!
+
+Building a ROM with RGBDS has three steps to it, which I will now sample from \href{https://rgbds.gbdev.io/docs/rgbds.7/}{its manual}:
+\begin{enumerate}
+	\item Assemble source files into one object file each;
+	\item Link all of the object files into a “raw” ROM;
+	\item “Fix” the ROM so the console will accept it
+\end{enumerate}
+
+\alertinfo{If you are wondering why there is more than one step, \href{https://gbdev.io/gb-asm-tutorial/part1/toolchain.html}{the GB ASM tutorial} has you covered.}
+
+\subsubsection{Assembling source files}
+
+Here is how we create an object file:
+
+<<Assembly rules>>=
+obj/%.o: obj/%.mk
+	@touch $@
+@
+Wait... what?
+\texttt{touch} only pretends to modify the file, so that Make doesn't re-run the rule.
+And what's a \texttt{.mk} file, anyway?
+
+Well, we need to talk about the \twemoji{sparkles}dependency auto-discovery\twemoji{sparkles}.
+
+\subsubsection{Dependency auto-discovery}\label{sec:auto-discovery}
+
+For RGBASM to assemble a file, it must also be able to read every file that gets \texttt{INCLUDE}d or \texttt{INCBIN}'d.
+But, we don't know what files need to be made ahead of time!
+(Unless you want to make an exhaustive list in the Makefile, but believe me, that gets tiring \emph{fast}.)
+
+So, we instead make use of RGBASM's ability to inform Make of the files it needs to assemble.
+This is achieved using its \texttt{-M} option, specifying the files that are generated using \texttt{-MQ} (both the \texttt{.mk} file \emph{and} the \texttt{.o} one!).
+The \texttt{-MP} option is explained \href{https://rgbds.gbdev.io/docs/rgbasm.1/#MP}{in the manual}, but \texttt{-MG} is worth extra attention.
+
+\texttt{-MG} tells RGBASM that some of the files it it told to \texttt{INCLUDE} and/or \texttt{INCBIN} may be missing; and that if this were to happen, instead of erroring out like usual, it should note them in the \texttt{.mk} file, and exit \emph{normally}.
+When this happens, as we'll discuss more below, this will cause Make to “reload” its dependency information from the modified \texttt{.mk} file, (try to) make the newly discovered dependencies, and then re-run RGBASM, until the \texttt{.o} file is successfully created!
+
+<<Assembly rules>>=
+obj/%.mk: src/%.asm
+	@mkdir -p "${@D}"
+	${RGBASM} ${ASFLAGS} -o ${@:.mk=.o} $< \
+	    -M $@ -MG -MP -MQ ${@:.mk=.o} -MQ $@
+@
+The \texttt{\$\{@:.mk=.o\}} syntax means “expand to the contents of \texttt{\$@}, but replace the \texttt{.mk} file extension with \texttt{.o}”.
+
+\alerterror{
+	Savvy users of Make might suggest merging the \texttt{touch} rule above with this one.
+	But that would be incorrect!
+	Because, then, Make assumes that the rule \emph{will} create \textbf{both} files, even though this rule needs to be executed many times for the \texttt{.o} one to end up being created; this causes, in particular, spurious build failures, or \emph{some} versions of Make running the same command over and over forever.
+}
+
+We also need to inform Make of the dependency files that it should read; but, we don't do so when running \texttt{make clean}, as we don't need dependency info when we're trying to wipe the slate clean!
+<<Assembly rules>>=
+ifeq ($(filter clean,${MAKECMDGOALS}),)
+include $(patsubst src/%.asm,obj/%.mk,${SRCS})
+endif
+@
+Interestingly, Make also treats every such file as a target that needs to be made, and so it will automatically try to generate them if they don't exist yet.
+
+Importantly also, \texttt{include} causes Make to restart from scratch after one of the included files has been modified; this is how we get the “progressively retrying” behaviour we want for dependency auto-discovery.
+
+\subsubsection{Linking and fixing the ROM}\label{sec:linking}
+
+Once all of the object files are generated, we can link them all together (notice the use of \texttt{\$\^{}}!), and fix the ROM.
+
+Notice that this also unconditionally assembles the build date file.
+That ensures that the build date is always refreshed.
+
+<<Assembly rules>>=
+${ROM}: $(patsubst src/%.asm,obj/%.o,${SRCS})
+	@mkdir -p "${@D}"
+	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
+	${RGBLINK} ${LDFLAGS} -m bin/$*.map -n bin/$*.sym -o $@ $^ \
+	&& ${RGBFIX} -v ${FIXFLAGS} $@
+@
+
+\subsubsection{Submodules}
+
+A Git “submodule” is, largely, a Git repository inside of a Git repository; this has the benefit of making it easier to update the submodules, but the downside of being a little quirky.
+
+By default, cloning the repo does not initialise submodules (so they are empty); if that happens, Make would normally fail with some “file not found” error, but this rule makes it print a more user-friendly error message instead.
+
+Note that the real paths aren't used!
+Since RGBASM fails to find the files, it outputs the path(s) as passed to \texttt{include}, not where the file would actually be found (e.g. \texttt{src/hardware.inc/hardware.inc}).
+
+<<Assembly rules>>=
+hardware.inc/hardware.inc rgbds-structs/structs.asm:
+	@echo '$@ is not present; have you initialized submodules?'
+	@echo 'Run `git submodule update --init`,'
+	@echo 'then `make clean`,'
+	@echo 'then `make` again.'
+	@echo 'Tip: to avoid this, use `git clone --recursive` next time!'
+	@exit 1
+@
+You can see that there aren't any prerequisite files here---this is normal.
+Since there are no prerequisites, this rule can only trigger if the target file doesn't exist---precisely what we want!
+
+\section{Phony rules}
+
+Consistently with our trend of lacking consistency, let's now talk about \emph{rules that aren't really rules}: so-called “phony rules”.
+
+These are handy as quick little aliases: typing \texttt{make all} is much easier to remember and much less tedious to type than \texttt{make bin/dinosaurs\_with\_lasers.gb}, for example.
+Since this is a commonly desirable feature, these names are common conventions.
+
+\subsection{Building the ROM}
+
+\texttt{all} is the conventional “build the things I am likely to want”---in our case, the ROM and accompanying debug information.
+It is also a little special, as it is the \emph{first} rule in the file (as we will see in \autoref{sec:overall}), it is also the “default” target, i.e. what Make selects as its target if invoked without one (just \texttt{make}).
+
+<<Phony rules>>=
+all: ${ROM}
+.PHONY: all
+
+@
+
+\subsection{Cleaning temporary and final files}
+
+\texttt{clean} is the conventional “forget everything prior” target; it causes everything generated by prior invocations of Make to be deleted.
+
+(As we have seen in \autoref{sec:auto-discovery}, we also made it a little special, its presence suppressing dependency auto-discovery.)
+
+\pagebreak
+
+<<Phony rules>>=
+clean:
+	rm -rf bin obj assets
+.PHONY: clean
+@
+
+\section{Configuration}
+
+Time for piles of variables!
+
+First, this block allows one to customise where the build process will look for RGBDS.
+It is possible to customise the location (or even name!) of each of the programs individually, or in bulk thanks to the \texttt{RGBDS} variable.
+
+<<Configuration>>=
+RGBDS   ?=
+RGBASM  := ${RGBDS}rgbasm
+RGBLINK := ${RGBDS}rgblink
+RGBFIX  := ${RGBDS}rgbfix
+RGBGFX  := ${RGBDS}rgbgfx
+
+@
+The \texttt{?=} assignment may raise some eyebrows.
+Where \texttt{:=} sets the value of a variable, \texttt{?=} also sets it \emph{except} if an environment variable of the same name was passed to Make, in which case that environment variable takes precedence.
+
+This allows the following to work:
+\begin{pygmented}[lang=console]
+$ ls ~/rgbds-0.9.1
+rgbasm  rgbfix  rgbgfx  rgblink
+$ export RGBDS=~/rgbds-0.9.1
+$ make
+~/rgbds-0.9.1/rgbasm -p 0xFF (etc.)
+\end{pygmented}
+
+Then, we have some options that will be passed to the RGBDS programs.
+<<Configuration>>=
+INCDIRS  := src/ include/
+WARNINGS := all extra
+ASFLAGS  = -p ${PADVALUE} $(addprefix -I,${INCDIRS}) $(addprefix -W,${WARNINGS})
+LDFLAGS  = -p ${PADVALUE}
+FIXFLAGS = -p ${PADVALUE} -i "${GAMEID}" -k "${LICENSEE}" -l ${OLDLIC} -m ${MBC} -n ${VERSION} -r ${SRAMSIZE} -t ${TITLE}
+
+@
+
+And some file names:
+
+<<Configuration>>=
+ROM = bin/${ROMNAME}.${ROMEXT}
+SRCS := $(call rwildcard,src,*.asm)
+
+@
+
+And, last but not least, including the file containing project-specific configuration.
+<<Configuration>>=
+include project.mk
+@
+Rather than modifying this Makefile for each project, for example to change the ROM's file name, this can be used to override the above default configuration.
+
+You may have noticed that some of the variable assignments above used \texttt{:=}, but others used \texttt{=}.
+What's the difference?
+A variable assigned with \texttt{:=} has its value \emph{immediately} computed; however, \texttt{=} instead has the variable's value computed each time it it referenced.
+In particular, this allows the variables to reference variables that don't exist yet (\texttt{PADVALUE} is defined after \texttt{ASFLAGS}, in \texttt{project.mk}).
+
+\section{Overall structure}\label{sec:overall}
+
+Here is where we collect all the things we have seen thus far.
+
+\subsection{Make configuration}
+
+First, we disable a lot of Make's built-in rules, since they are at best useless to us.
+This also improves build time somewhat.
+<<Makefile>>=
+.SUFFIXES:
+
+@
+
+Parallel builds are broken with macOS' bundled version of Make; please see \href{https://github.com/ISSOtm/gb-starter-kit/issues/1\#issuecomment-1793775226}{this issue comment} for a technical explanation.
+If you are using macOS, please consider installing Make from \href{https://brew.sh}{Homebrew} (\texttt{brew install make}, \textbf{make sure to read the caveats it prints}).
+Delete the \texttt{.NOTPARALLEL} line if you want to have parallel builds regardless!
+<<Makefile>>=
+ifeq (${MAKE_VERSION},3.81)
+.NOTPARALLEL:
+endif
+
+@
+
+\subsection{Miscellanea}
+
+Here, we have a “recursive \texttt{\$(wildcard)}” function.
+
+<<Makefile>>=
+rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
+<<Configuration>>
+@
+
+\subsection{Rules}
+
+Phony rules must come before other rules so that \texttt{all} is the default target.
+<<Makefile>>=
+<<Phony rules>>
+
+<<VPATH>>
+<<Asset rules>>
+<<Assembly rules>>
+@
+\end{document}

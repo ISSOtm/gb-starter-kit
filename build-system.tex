@@ -1,0 +1,35 @@
+
+\documentclass[12pt,a4paper]{article}
+\usepackage[french,english]{babel}
+\usepackage{alertmessage}
+\usepackage{twemojis}
+\usepackage[bottom]{footmisc}
+\usepackage[margin=1in]{geometry}
+\usepackage{noweb}
+\usepackage{pygmentex}
+\usepackage{tcolorbox}
+\usepackage[colorlinks=true,pdftitle=gb-starter-kit]{hyperref}
+
+\def\nwbegincode#1{%
+  \vskip5pt\noindent}
+\def\nwendcode{}
+\let\nwdocspar=\smallbreak
+
+\author{\href{https://eldred.fr}{Eldred \bsc{Habert}}\thanks{Contributions by JL2210, Damian Yerrick, Evie, and Starleaf.}}
+\title{\texttt{gb-starter-kit} build system breakdown}
+
+\begin{document}
+\maketitle
+\renewcommand{\abstractname}{Summary and Intended Audience}
+\begin{abstract}
+	This document is useful for people who wish to understand why gb-starter-kit's Makefile (build script) is written in the way that it is, why and how it does what it does, and perhaps also gain some insight into Makefile good practices.
+
+	It does contain a fairly quick primer on what a Makefile \emph{is}, so it is intended to be suitable to people who have never touched a Makefile before.
+\end{abstract}
+\tableofcontents
+
+\pagebreak
+
+\input{Makefile}
+
+\end{document}

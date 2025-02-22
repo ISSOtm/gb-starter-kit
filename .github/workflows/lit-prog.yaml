@@ -1,0 +1,69 @@
+name: Weave+publish, & tangle onto `master`
+
+on:
+  push:
+    branches: [ "doc" ]
+  workflow_dispatch:
+
+jobs:
+  tangle:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Noweb
+        run: sudo apt install noweb
+      - name: Checkout master branch
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: master
+          token: ${{ secrets.PAT }}
+      - name: Tangle
+        run: notangle -RMakefile -t8 Makefile.nw >master/Makefile
+      - name: Push the modified Makefile
+        uses: EndBug/add-and-commit@v9
+        with:
+          cwd: master
+          add: Makefile
+          message: |
+            Update Makefile from `doc` branch
+
+            Built from commit $(git -C .. rev-parse HEAD)
+          default_author: user_info
+          pathspec_error_handling: exitAtEnd
+          push: true
+
+  weave:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Install Noweb
+        run: sudo apt install noweb texlive-latex-extra texlive-lang-english texlive-lang-french texlive-xetex
+      - name: Weave
+        run: |
+          ./weave.sh
+          mkdir _site
+          cp out/build-system.pdf _site
+      - name: Upload generated PDF
+        uses: actions/upload-pages-artifact@v3
+  publish:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: weave
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
