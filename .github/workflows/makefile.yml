@@ -1,0 +1,37 @@
+name: Check that the ROM can be built
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Install RGBDS (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mkdir rgbds
+        curl -L https://github.com/gbdev/rgbds/releases/download/v0.9.1/rgbds-0.9.1-linux-x86_64.tar.xz | tar xJC rgbds
+        cd rgbds
+        sudo ./install.sh
+    - name: Install RGBDS (macOS)
+      if: matrix.os == 'macos-latest'
+      run: brew install rgbds
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Build
+      run: make
+    - name: Upload the ROM
+      uses: actions/upload-artifact@v4
+      with:
+        name: ROM (${{matrix.os}})
+        path: bin
