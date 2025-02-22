@@ -53,7 +53,7 @@ assets/%.pb8.size: assets/%
 	printf 'def NB_PB8_BLOCKS equ ((%u) + 7) / 8\n' \
 	    "$$(wc -c <$<)" >assets/$*.pb8.size
 obj/%.o: obj/%.mk
-	@touch $@
+	@touch -c $@
 obj/%.mk: src/%.asm
 	@mkdir -p "${@D}"
 	${RGBASM} ${ASFLAGS} -o ${@:.mk=.o} $< \
