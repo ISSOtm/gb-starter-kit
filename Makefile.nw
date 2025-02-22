@@ -1,4 +1,4 @@
-%!TEX root = doc.tex
+%!TEX root = build-system.tex
 @
 \section{Build rules}
 
@@ -276,10 +276,10 @@ Here is how we create an object file:
 
 <<Assembly rules>>=
 obj/%.o: obj/%.mk
-	@touch $@
+	@touch -c $@
 @
 Wait... what?
-\texttt{touch} only pretends to modify the file, so that Make doesn't re-run the rule.
+\texttt{touch} only pretends to modify the file, so that Make doesn't re-run the rule\footnote{\texttt{-c} ensures that the file isn't created if it doesn't already exist.}.
 And what's a \texttt{.mk} file, anyway?
 
 Well, we need to talk about the \twemoji{sparkles}dependency auto-discovery\twemoji{sparkles}.
