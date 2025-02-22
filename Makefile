@@ -1,7 +1,7 @@
 .SUFFIXES:
 
 ifeq (${MAKE_VERSION},3.81)
-.NOTPARALLEL:
+$(error This version of Make is buggy and may fail to compile. Please install a more recent version of Make.)
 endif
 
 rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
