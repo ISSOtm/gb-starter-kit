@@ -61,10 +61,12 @@ obj/%.mk: src/%.asm
 ifeq ($(filter clean,${MAKECMDGOALS}),)
 include $(patsubst src/%.asm,obj/%.mk,${SRCS})
 endif
+SYMFILE := $(basename ${ROM}).sym
+MAPFILE := $(basename ${ROM}).map
 ${ROM}: $(patsubst src/%.asm,obj/%.o,${SRCS})
 	@mkdir -p "${@D}"
 	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
-	${RGBLINK} ${LDFLAGS} -m$(basename ${ROM}).map -n $(basename ${ROM}).sym -o $@ $^ \
+	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ $^ \
 	&& ${RGBFIX} -v ${FIXFLAGS} $@
 hardware.inc/hardware.inc rgbds-structs/structs.asm:
 	@echo '$@ is not present; have you initialized submodules?'
