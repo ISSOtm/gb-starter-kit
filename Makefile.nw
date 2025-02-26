@@ -324,15 +324,17 @@ Importantly also, \texttt{include} causes Make to restart from scratch after one
 \subsubsection{Linking and fixing the ROM}\label{sec:linking}
 
 Once all of the object files are generated, we can link them all together (notice the use of \texttt{\$\^{}}!), and fix the ROM.
+Two variables are used here (\texttt{SYMFILE} and \texttt{MAPFILE}), purely for readability's sake.
 
-Notice that this also unconditionally assembles the build date file.
-That ensures that the build date is always refreshed.
+Notice that this recipe unconditionally assembles the build date file: that ensures that the build date is always refreshed.
 
 <<Assembly rules>>=
+SYMFILE := $(basename ${ROM}).sym
+MAPFILE := $(basename ${ROM}).map
 ${ROM}: $(patsubst src/%.asm,obj/%.o,${SRCS})
 	@mkdir -p "${@D}"
 	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
-	${RGBLINK} ${LDFLAGS} -m$(basename ${ROM}).map -n $(basename ${ROM}).sym -o $@ $^ \
+	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ $^ \
 	&& ${RGBFIX} -v ${FIXFLAGS} $@
 @
 
