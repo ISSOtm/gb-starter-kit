@@ -29,8 +29,8 @@ First, a bit of terminology:
 	\item \texttt{hello.c} and \texttt{hello.h} are called \textbf{prerequisites}, since they are necessary to build the “target”. You can also think of them as \emph{ingredients}.
 	\item And finally, the list of commands is called the \textbf{recipe}.
 \end{itemize}
-Also, Make is designed to avoid running commands that are superfluous; this helps keep build times low.
-Make determines that a file is “out of date” by \emph{comparing the time of the last modification} of itself, versus that of each of its dependencies.
+Also, Make is designed to avoid running commands that are superfluous; this helps keep builds fast.
+Make determines that a file is “out of date” by \emph{comparing the time of the last modification} of that file, versus that of each of its dependencies.
 When Make determines that one of the \textbf{prerequisites} is “newer” than the \textbf{target} (or that the target doesn't exist at all), then the \textbf{recipe} is run.
 
 Now, let's tweak the rule a little, for some extra conveniences.
@@ -63,7 +63,7 @@ Here are the only four of these “automatic variables” you will probably ever
 \begin{tabular}{ c | l }
 	\$@ & The rule's \emph{current} target \\ \hline
 	\$< & The first (leftmost) prerequisite \\ \hline
-	\$\^{} & \emph{All} of the prerequisites \\ \hline
+	\$\^{} & \emph{All} of the prerequisites, with one space between each \\ \hline
 	\$* & The part of the file names matched by the \texttt{\%} character \\
 \end{tabular}
 \end{center}
@@ -87,7 +87,7 @@ If there are none, then it tries all pattern rules one by one: for each, it trie
 Using automatic variables is largely a nicety when using explicit rules, but they become pretty much required when you start using implicit rules.
 \\
 
-There is, however, a \emph{very important} requirement for Make to accept an implicit rule as applicable: \textbf{all of its prerequisitites} must either already exist, or be able to be made (by explicit or implicit rules).
+There is, however, a \emph{very important} requirement for Make to accept an implicit rule as applicable: \textbf{all of its prerequisites} must either already exist, or be able to be made (by explicit or implicit rules).
 This leads to a common source of confusion
 This causes, in particular, a commonly confusing error message, which we will illustrate using a little feline example.
 
@@ -128,12 +128,12 @@ In turn, this causes it to reject the second pattern rule, and decide that it do
 	\textbf{tl;dr}: If Make complains that it doesn't know how to make a file when it looks like there is a pattern rule that \emph{should} work: check that rule's prerequisites.
 }
 
-You can try passing the \texttt{-d} / \texttt{--debug} option to ask Make to “show its work”, but note that Make has a \textbf{ton} of built-in implicit rules that will create a lot of noise, so I recommend also passing the \texttt{-r} / \texttt{--no-builtin-rules}.
+You can try passing the \texttt{-d} / \texttt{--debug} option to ask Make to “show its work”, but note that Make has a \textbf{ton} of built-in implicit rules that will create a lot of noise, so I recommend also passing the \texttt{-r} / \texttt{--no-builtin-rules} option.
 
 Also, the \texttt{rm my.meow} command was inserted by Make itself, since it decided that \texttt{my.meow} is an intermediate file that doesn't need to be kept.
 \\
 
-Now, let's start looking at actual rules from the Makefile.
+Now, let's start looking at actual rules from gb-starter-kit's Makefile.
 
 \subsection{Asset rules}\label{sec:assets}
 
@@ -164,7 +164,7 @@ Having it echoed all the time would pretty much drown out the commands we \emph{
 
 On to the command itself: \texttt{mkdir} stands for “make directory”, and it pretty much does what it says on the tin.
 Now, \texttt{mkdir} has some interesting behaviour: by default, \texttt{mkdir a/b} errors out if \textbf{\texttt{a} doesn't exist}, and also if \textbf{\texttt{a/b} already exists}.
-The \texttt{-p} option, which can also be written as \texttt{--parents}, is designed to suppress the former behaviour (“create the directory I'm interested in, but also all of its parents as necessary”), but interestingly it \emph{also} suppresses the latter behaviour.
+The \texttt{-p} option, which can also be written as \texttt{--parents}, is designed to suppress the former behaviour (“create the directory I'm interested in, but also all of its parents as necessary”), but interestingly it \emph{also} suppresses the latter behaviour; both of which are useful to us.
 
 And, finally, we should talk about that little \texttt{\$\{@D\}} nugget.
 (I will not go into detail about the quotes, because they are passed as-is by Make to the shell, and shell quoting is an entire rabbit hole that doesn't really belong here.)
@@ -208,10 +208,10 @@ Anyhow, this rule is a good occasion to talk about what I like to call “rule c
 For example, if you ask Make to \texttt{make assets/player/running.2bpp.pb16}, then the following happens:
 \begin{enumerate}
 	\item Make checks if \texttt{assets/player/running.2bpp.pb16} exists. (Let's pretend it does not.)
-	\item Make checks if it knows how to make that file. It finds the \texttt{assets/\%.2bpp} rule!
+	\item Make checks if it knows how to make that file. It finds the \texttt{assets/\%.pb16} rule!
 	\begin{enumerate}
 		\item Make checks if \texttt{assets/player/running.2bpp} exists. (Let's pretend that one does not exist either.)
-		\item Make checks if it knows how to make that file. It finds the \texttt{assets/\%.png} rule!
+		\item Make checks if it knows how to make that file. It finds the \texttt{assets/\%.2bpp} rule!
 		\begin{enumerate}
 			\item Make checks if \texttt{assets/player/running.png} exists. It finds that file!
 		\end{enumerate}
@@ -234,7 +234,7 @@ assets/%.pb16.size: assets/%
 Notice the \texttt{\$\$}: because we want that dollar sign to be interpreted by the shell, not by Make, we have to escape it... and that's done by doubling it\footnote{Internally, this is done by having a variable called \texttt{\$}, and whose contents are a single dollar sign. Yes, \texttt{\$\{\$\}} is valid, but why would you do that!?}.
 
 Then, we have pretty much a copy-paste of the above two, but for the PackBits\textbf{8} compression scheme.
-Where PB16 performs well on 2bpp tile data, PB8 does better on 1bpp tile data.
+While PB16 performs well on 2bpp tile data, PB8 does better on 1bpp tile data.
 
 <<Asset rules>>=
 assets/%.pb8: src/tools/pb8.py assets/%
@@ -250,7 +250,7 @@ assets/%.pb8.size: assets/%
 
 Now, as we will see later, the \texttt{assets/} directory gets entirely removed when running \texttt{make clean} (the “restart from scratch” command).
 Yet, as we've seen above, asset rules convert files in \texttt{assets/} into other files in \texttt{assets/}.
-Making two versions of each rule (one expecting files from \texttt{assets/}, and the other from \texttt{src/assets/}) is a possibility, but it would very annoying.
+Making two versions of each rule (one expecting files from \texttt{assets/}, and the other from \texttt{src/assets/}) is a possibility, but it would be very annoying.
 <<VPATH>>=
 VPATH := src
 @
@@ -308,7 +308,7 @@ The \texttt{\$\{@:.mk=.o\}} syntax means “expand to the contents of \texttt{\$
 \alerterror{
 	Savvy users of Make might suggest merging the \texttt{touch} rule above with this one.
 	But that would be incorrect!
-	Because, then, Make assumes that the rule \emph{will} create \textbf{both} files, even though this rule needs to be executed many times for the \texttt{.o} one to end up being created; this causes, in particular, spurious build failures, or \emph{some} versions of Make running the same command over and over forever.
+	Because, then, Make assumes that the rule \emph{will} create \textbf{both} files, even though this rule needs to be executed many times for the \texttt{.o} file to end up being created; this causes, in particular, spurious build failures, or \emph{some} versions of Make running the same command over and over forever.
 }
 
 We also need to inform Make of the dependency files that it should read; but, we don't do so when running \texttt{make clean}, as we don't need dependency info when we're trying to wipe the slate clean!
@@ -530,7 +530,7 @@ And, finally, if you don't want to use a MBC, this sets RGBDS' memory layout in 
 
 \subsubsection{Miscellanea}
 
-This defines the value that the ROM will be filled with.
+This defines the value that unused bytes in the ROM will be filled with.
 The default value of \texttt{0xFF} is actually significant: it encodes the \texttt{rst \$38} instruction, which helps catch runaway execution (say, dereferencing a bad jump table index, or forgetting a \texttt{ret}...) by making it jump to \texttt{\$0038}, where a crash handler is located (by default).
 <<project.mk>>=
 PADVALUE := 0xFF
