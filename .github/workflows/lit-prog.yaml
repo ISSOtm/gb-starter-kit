@@ -14,7 +14,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Noweb
-        run: sudo apt install noweb
+        run: |
+          sudo apt update
+          sudo apt install noweb
       - name: Checkout master branch
         uses: actions/checkout@v4
         with:
@@ -52,7 +54,9 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
       - name: Install Noweb
-        run: sudo apt install noweb texlive-latex-extra texlive-lang-english texlive-lang-french texlive-xetex
+        run: |
+          sudo apt update
+          sudo apt install noweb texlive-latex-extra texlive-lang-english texlive-lang-french texlive-xetex
       - name: Weave
         run: |
           ./weave.sh
