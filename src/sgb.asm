@@ -1,14 +1,14 @@
-
 INCLUDE "defines.asm"
+
 
 SECTION "SGB routines", ROM0
 
 ; Sends SGB packets to the SGB, assuming we're running on one.
-; @param hl Pointer to the packet data to be sent (can send any number of packets btw)
-; @return hl Points to the end of the packet data
-; @return de Zero
-; @return bc Zero
-; @return a Zero
+; @param  hl: Pointer to the packet data to be sent (can send any number of packets btw)
+; @return hl: Points to the end of the packet data
+; @return de: 0
+; @return bc: 0
+; @return a:  0
 SendPackets::
     ld a, [hl] ; Length
     and %111
@@ -27,11 +27,11 @@ SendPackets::
 ; Does not perform any delay after sending the packet.
 ; Use only if you're not going to send another SGB packet in the next few frames.
 ; You're likely to perform some decompression or smth after this
-; @param hl Pointer to the packet data to be sent.
-; @return hl Points to the end of the packet data
-; @return b Zero
-; @return d Zero
-; @return a $30
+; @param  hl: Pointer to the packet data to be sent.
+; @return hl: Points to the end of the packet data
+; @return b:  0
+; @return d:  0
+; @return a:  $30
 ; @destroy e
 FreezeSGBScreen::
     ld hl, FreezeScreenPacket
@@ -40,11 +40,11 @@ FreezeSGBScreen::
 ; Unsuitable to send multi-packet packets.
 ; Use only if you're not going to send another SGB packet in the next four frames.
 ; Assumes the joypad won't be polled by interrupts during this time, but since the VBlank handler doesn't poll except when waited for, this is fine.
-; @param hl Pointer to the packet data to be sent.
-; @return hl Points to the end of the packet data
-; @return b Zero
-; @return d Zero
-; @return a $30
+; @param  hl: Pointer to the packet data to be sent.
+; @return hl: Points to the end of the packet data.
+; @return b:  0
+; @return d:  0
+; @return a:  $30
 ; @destroy e
 SendPacketNoDelay::
     ; Packet transmission begins by sending $00 then $30
@@ -97,11 +97,12 @@ FreezeScreenPacket:
     sgb_packet MASK_EN, 1, 1
 
 
-; Fill the $9C00 tilemap with a pattern suitable for SGB _TRN
-; Also sets up the rendering parameters for the transfer
-; Finally, assumes the LCD is **off**
-; @return hl
+; Fill the $9C00 tilemap with a pattern suitable for SGB `*_TRN`.
+; Also sets up the rendering parameters for the transfer.
+; Finally, assumes the LCD is **off**.
+; @destroy hl
 FillScreenWithSGBMap::
+    runtime_assert [rLCDC] & $80 == 0, "`FillScreenWithSGBMap` must be called with LCD off!"
     xor a
     ldh [hSCY], a
     ldh [hSCX], a
@@ -127,6 +128,6 @@ FillScreenWithSGBMap::
     ldh [hBGP], a
 SetupSGBLCDC::
     ld a, LCDCF_ON | LCDCF_WINOFF | LCDCF_BG8000 | LCDCF_BG9C00 | LCDCF_OBJOFF | LCDCF_BGON
-    ldh [rLCDC], a
     ldh [hLCDC], a
+    ldh [rLCDC], a
     ret

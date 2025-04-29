@@ -1,3 +1,5 @@
+INCLUDE "defines.asm"
+
 
 SECTION "Intro", ROMX
 

@@ -1,5 +1,24 @@
-
 INCLUDE "defines.asm"
+
+
+SECTION "NULL trap", ROM0
+
+NULL:: align 16, $00
+	; This traps jumps to $0000, which is a common "default" pointer.
+	; $FFFF is another one, which ends up reading `rIE` as the opcode; so, we put two `nop`s that
+	; will possibly be read as operand(s), before soft-crashing. Since both are zero, even a jump
+	; would jump to $0000, i.e. here. Nice!
+	nop :: nop
+	unreachable
+	rst Crash
+
+SECTION "Rst $38 trap", ROM0
+
+; Perform a soft-crash.
+Crash:: align 16, $38
+		di ; Doing this as soon as possible to avoid interrupts messing up.
+		jp HandleCrash
+
 
 	newcharmap crash_handler
 def CHARS equs "0123456789ABCDEF-GHIJKLMNOPQR:SUVWXYZabcdefghijklmnopqrTstuvwxyz! "
@@ -12,33 +31,32 @@ def HEADER_HEIGHT EQU 3
 
 SECTION "Crash handler", ROM0
 
-HandleCrash::
-	; We will use VRAM as scratch, since we are going to overwrite it for
-	; screen output anyways. The thing is, we need to turn the LCD off
-	; *without* affecting flags... fun task, eh?
-
+; Don't call this directly, use `rst Crash`.
+HandleCrash:
 	; Note: it's assumed that this was jumped to with IME off.
-	; Don't call this directly, use `rst Crash`.
+
+	; We will use VRAM as scratch, since we are going to overwrite it for screen output anyway.
+	; The thing is, we need to turn the LCD off *without* affecting flags... fun task, eh?
 
 	ld [wCrashA], a ; We need to have at least one working register, so...
-	ldh a, [rIE] ; We're also going to overwrite this
+	ldh a, [rIE] ; We're also going to overwrite this.
 	ld [wCrashIE], a
 	ldh a, [rLCDC]
 	ld [wCrashLCDC], a
-	ld a, LCDCF_ON ; Make sure the LCD is turned on to avoid waiting infinitely
+	ld a, LCDCF_ON ; Make sure the LCD is turned on to avoid waiting infinitely.
 	ldh [rLCDC], a
 	ld a, IEF_VBLANK
 	ldh [rIE], a
-	ld a, 0 ; `xor a` would overwrite flags
-	ldh [rIF], a ; No point in backing up that register, it's always changing
-	halt ; With interrupts disabled, this will exit when `IE & IF != 0`
-	nop ; Handle hardware bug if it becomes true *before* starting to execute the instruction (1-cycle window)
+	ld a, 0 ; `xor a` would overwrite flags!
+	ldh [rIF], a ; No point in backing up that register, it's always changing.
+	halt ; With interrupts disabled, this will exit when `IE & IF != 0`.
+	nop ; Handle hardware bug if it becomes true *before* starting to execute the instruction (1-cycle window).
 
-	; We're now in VBlank! So we can now use VRAM as scratch for some cycles
+	; We're now in VBlank! So we can now use VRAM as scratch for a while (1140 cycles to be precise).
 
 	ld a, 0
-	ldh [rLCDC], a ; Turn off LCD so VRAM can always be safely accessed
-	; Save regs
+	ldh [rLCDC], a ; Turn off LCD so VRAM can always be safely accessed.
+	; Save the other CPU registers.
 	ld [vCrashSP], sp
 	ld sp, vCrashSP
 	push hl
@@ -46,13 +64,13 @@ HandleCrash::
 	push bc
 	ld a, [wCrashA]
 	push af
-	; We need to have all the data in bank 0, but we can't guarantee we were there
+	; We need to have all the data in bank 0, but we can't guarantee we were there.
 	ldh a, [rVBK]
 	ld [vCrashVBK], a
 	bit 0, a
 	jr z, .bank0
 	; Oh noes. We need to copy the data across banks!
-	ld [vCrashDumpScreen], a ; Use this as a scratch byte
+	ld [vCrashDumpScreen], a ; Use this as a scratch byte.
 	ld hl, vCrashAF
 	ld c, 5 * 2
 .copyAcross
@@ -71,10 +89,11 @@ HandleCrash::
 .bank0
 	ld [vCrashVBK], a
 
-	; Kill sound for this screen
+	; Kill sound for this screen.
 	xor a
 	ldh [rNR52], a
 
+	; Clear the attribute map.
 	inc a ; ld a, 1
 	ldh [rVBK], a
 	ld hl, vCrashDumpScreen
@@ -91,7 +110,7 @@ HandleCrash::
 	xor a
 	ldh [rVBK], a
 
-	; Load palettes
+	; Load palettes; both DMG and CGB, just to be safe.
 	ld a, $03
 	ldh [rBGP], a
 	ld a, $80
@@ -111,35 +130,35 @@ ENDR
 	ld a, SCRN_VX - SCRN_X - 4
 	ldh [rSCX], a
 
-	; Copy 1bpp font, compressed using PB8 by PinoBatch
+	; Copy 1bpp font, compressed using PB8 by PinoBatch.
 	ld hl, .font
 	ld de, $9000
 INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld c, NB_PB8_BLOCKS
 	PURGE NB_PB8_BLOCKS
 .pb8BlockLoop
-	; Register map for PB8 decompression
+	; Register map for PB8 decompression:
 	; HL: source address in boot ROM
 	; DE: destination address in VRAM
-	; A: Current literal value
-	; B: Repeat bits, terminated by 1000...
-	; C: Number of 8-byte blocks left in this block
+	; A:  Current literal value
+	; B:  Repeat bits, terminated by 1000...
+	; C:  Number of 8-byte blocks left in this block
 	; Source address in HL lets the repeat bits go straight to B,
 	; bypassing A and avoiding spilling registers to the stack.
 	ld b, [hl]
 	inc hl
 
-	; Shift a 1 into lower bit of shift value.  Once this bit
-	; reaches the carry, B becomes 0 and the byte is over
+	; Shift a 1 into lower bit of shift value.
+	; Once this bit reaches the carry, B becomes 0 and the byte is over.
 	scf
 	rl b
 
 .pb8BitLoop
-	; If not a repeat, load a literal byte
-	jr c,.pb8Repeat
+	; If not a repeat, load a literal byte.
+	jr c, .pb8Repeat
 	ld a, [hli]
 .pb8Repeat
-	; Decompressed data uses colors 0 and 3, so write twice
+	; Decompressed data uses colors 0 and 3, so write twice.
 	ld [de], a
 	inc e ; inc de
 	ld [de], a
@@ -150,16 +169,16 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	dec c
 	jr nz, .pb8BlockLoop
 
-	; Copy the registers to the dump viewers
+	; Copy the registers to the dump viewers.
 	ld hl, vDumpHL
 	ld de, vCrashHL
 	ld c, 4
 	rst MemcpySmall
 
-	; We're now going to draw the screen, top to bottom
+	; We're now going to draw the screen, top to bottom.
 	ld hl, vCrashDumpScreen
 
-	; First 3 lines of text
+	; First 3 lines of text...
 	ld de, .header
 	ld b, HEADER_HEIGHT
 .writeHeaderLine
@@ -175,12 +194,12 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	dec b
 	jr nz, .writeHeaderLine
 
-	; Blank line
+	; Blank line.
 	ld a, " "
 	ld c, SCRN_X_B + 1
 	rst MemsetSmall
 
-	; AF and console model
+	; AF and console model.
 	ld l, LOW(vCrashDumpScreen.row4)
 	ld c, 4
 	rst MemcpySmall
@@ -195,7 +214,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld [hli], a
 	ld [hli], a
 
-	; BC and DE
+	; BC and DE.
 	ld l, LOW(vCrashDumpScreen.row5)
 	ld c, 4
 	rst MemcpySmall
@@ -210,7 +229,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld [hli], a
 	ld [hli], a
 
-	; Now, the two memory dumps
+	; Now, the two memory dumps!
 .writeDump
 	ld a, l
 	add a, SCRN_VX_B - SCRN_X_B - 1
@@ -274,7 +293,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 .writeBuildDate
 	ld a, [de]
 	inc de
-	; Build date is in ASCII, translate it to our custom encoding
+	; Build date is in ASCII, translate it to our custom encoding.
 	sub $30
 	cp 10
 	jr c, .digit
@@ -290,17 +309,17 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld c, SCRN_X_B + 1
 	rst MemsetSmall
 
-	; Start displaying
+	; Start displaying!
 	ld a, LCDCF_ON | LCDCF_BG9C00 | LCDCF_BGON
 	ldh [rLCDC], a
 
 	xor a
 	ld [vWhichDump], a
-	ld [vHeldKeys], a ; Mark all keys as "previously held"
+	ld [vHeldKeys], a ; Mark all keys as "previously held".
 	ld a, 30
 	ld [vUnlockCounter], a
 .loop
-	; The code never lags, and IE is equal to IEF_VBLANK
+	; The code never lags, and IE is equal to IEF_VBLANK.
 	xor a
 	ldh [rIF], a
 	halt
@@ -352,33 +371,33 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	adc a, h
 	sub l
 	ld h, a
-	; Process input, compute 16-bit offset to add to current addr
+	; Process input, compute 16-bit offset to add to current addr.
 	ld de, 0
 	bit PADB_START, c
 	jr nz, .noInc
 	inc de
 .noInc
-	rlc c ; Check if Down was pressed
+	rlc c ; Check if Down was pressed.
 	jr c, .noDown
 	ld a, [vHeldKeys]
-	rra ; Carry reset iff A held
+	rra ; Carry reset iff A held.
 	sbc a, a
 	cpl
-	or $0F ; $FF if held, $0F otherwise
+	or $0F ; $FF if held, $0F otherwise.
 	ld e, a
 	; ld d, 0
 	inc de
 .noDown
-	rlc c ; Check if Up was pressed
+	rlc c ; Check if Up was pressed.
 	jr c, .noUp
 	ld a, [vHeldKeys]
-	rra ; Carry reset iff A held
+	rra ; Carry reset iff A held.
 	sbc a, a
-	and $F0 ; $00 if held, $F0 otherwise
+	and $F0 ; $00 if held, $F0 otherwise.
 	ld e, a
 	ld d, $FF
 .noUp
-	; Add offset to cur address, and store back
+	; Add offset to current address, and store back.
 	ld a, [hl]
 	add a, e
 	ld e, a
@@ -388,7 +407,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld d, a
 	ld [hl], a
 
-	; Compute pointer to "view:" number
+	; Compute pointer to "view:" number.
 	rrc b ; 0 or 1
 	ld a, b
 	xor HIGH(vCrashDumpScreen.row5 + 47)
@@ -399,7 +418,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld l, a
 	call .printDump
 
-	; Now, let's highlight the selected dump region
+	; Now, let's highlight the selected dump region.
 	ld a, [vWhichDump] ; 0 or 2
 	swap a ; 0 or 32
 	add a, 56
@@ -411,7 +430,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ldh a, [rLY]
 	cp e
 	jr nz, .wait
-	; CGB pal is more critical because it can only be written during Mode 0
+	; CGB palettes are more critical because they can only be written during Mode 0.
 	ld a, LOW($294A)
 	ldh [c], a
 	ld a, HIGH($294A)
@@ -518,23 +537,23 @@ INCBIN "assets/crash_font.1bpp.pb8"
 	db " IE:"
 	db "  Bank:", "R", LOW(hCurROMBank), HIGH(hCurROMBank), "V", LOW(vCrashVBK), HIGH(vCrashVBK), "W", LOW(rSVBK), HIGH(rSVBK), " "
 
-; This is made to be as small as possible, since the footprint of this should be minimal
-; Unfortunately, I don't think I can do better
+; This is made to be as small as possible, since the footprint of this should be minimal.
+; Unfortunately, I don't think I can do better..!
 SECTION "Crash handler scratch", WRAM0
 
-wCrashA: db ; We need at least one working register, and A allows accessing memory
+wCrashA: db ; We need at least one working register, and A allows accessing memory.
 wCrashIE: db
 wCrashLCDC: db
 
 SECTION UNION "9C00 tilemap", VRAM[$9C00],BANK[0]
 
-; Put the crash dump screen at the bottom-right of the 9C00 tilemap, since that tends to be unused space
-	ds SCRN_VX_B * (SCRN_VY_B - SCRN_Y_B - 2) ; 2 rows reserved as scratch space
+; Put the crash dump screen at the bottom-right of the 9C00 tilemap, since that tends to be unused space.
+	ds SCRN_VX_B * (SCRN_VY_B - SCRN_Y_B - 2) ; 2 rows reserved as scratch space.
 
-	ds SCRN_X_B ; Try not to overwrite the window area
+	ds SCRN_X_B ; Try not to overwrite the window area!
 	ds 2 * 1 ; Free stack entries (we spill into the above by 1 entry, though :/)
-	; These are the initial values of the registers
-	; They are popped off the stack when printed, freeing up stack space
+	; These are the initial values of the registers.
+	; They are popped off the stack when printed, freeing up stack space.
 vCrashAF: dw
 vCrashBC: dw
 vCrashDE: dw
@@ -542,13 +561,13 @@ vCrashHL: dw
 vCrashSP: dw
 
 	ds SCRN_X_B
-vHeldKeys: db ; Keys held on previous frame
-vUnlockCounter: db ; How many frames until dumps are "unlocked"
+vHeldKeys: db ; Keys held on previous frame.
+vUnlockCounter: db ; How many frames until dumps are "unlocked".
 vWhichDump: db
 vDumpHL: dw
 vDumpSP: dw
 vCrashVBK: db
-	ds 4 ; Unused
+	ds 4 ; Unused.
 
 	ds SCRN_VX_B - SCRN_X_B - 1
 vCrashDumpScreen:

@@ -4,3 +4,6 @@
 [submodule "src/include/rgbds-structs"]
 	path = include/rgbds-structs
 	url = https://github.com/ISSOtm/rgbds-structs.git
+[submodule "include/debugfile.inc"]
+	path = include/debugfile.inc
+	url = https://github.com/ISSOtm/debugfile.inc
