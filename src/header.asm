@@ -6,11 +6,6 @@ SECTION "Global vars", HRAM
 ; 0 if CGB (including DMG mode and GBA), non-zero for other models
 hConsoleType:: db
 
-; Copy of the currently-loaded ROM bank, so the handlers can restore it
-; Make sure to always write to it before writing to ROMB0
-; (Mind that if using ROMB1, you will run into problems)
-hCurROMBank:: db
-
 SECTION UNION "Shadow OAM", WRAM0,ALIGN[8]
 
 wShadowOAM::
@@ -80,7 +75,6 @@ Reset:: ; This is where the VBlank handler jumps to if Start+Select+B+A are all 
 	; Important to do it before enabling interrupts!
 	assert BANK(Intro) != 0, "`Intro` is in ROM0, please write 1 to the bank registers instead"
 	ld a, BANK(Intro)
-	ldh [hCurROMBank], a
 	ld [rROMB0], a
 
 	; Select wanted interrupts here.

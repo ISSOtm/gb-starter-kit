@@ -25,6 +25,12 @@ MACRO lb
 ENDM
 
 
+; Where the current ROM bank number can be read.
+; The default value of $7fff is the most friendly to the section packing algorithm,
+;   but it can be customised just fine.
+def RomBank equ $7fff
+
+
 ; SGB packet types
 RSRESET
 def PAL01     rb 1

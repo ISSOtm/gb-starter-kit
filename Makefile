@@ -65,10 +65,13 @@ include ${DEPFILES}
 endif
 SYMFILE := $(basename ${ROM}).sym
 MAPFILE := $(basename ${ROM}).map
-${ROM}: $(patsubst src/%.asm,obj/%.o,${SRCS})
+${ROM}: src/tools/nb_used_banks.py ${OBJS}
 	@mkdir -p "${@D}"
 	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
-	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ $^ \
+	${RGBLINK} ${LDFLAGS} -m ${MAPFILE}.tmp ${OBJS}
+	NB_BANKS=$$($< ${MAPFILE}.tmp) && ${RGBASM} ${ASFLAGS} -o obj/bank_numbers.o src/bank_numbers.asm -DNB_BANKS=$$NB_BANKS
+	rm ${MAPFILE}.tmp
+	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ ${OBJS} \
 	&& ${RGBFIX} -v ${FIXFLAGS} $@
 obj/%.dbg: obj/%.o
 	${RGBASM} ${ASFLAGS} src/$*.asm -DPRINT_DEBUGFILE

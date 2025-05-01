@@ -536,7 +536,7 @@ INCBIN "assets/crash_font.1bpp.pb8"
 	db " LCDC:"
 	db " K1:"
 	db " IE:"
-	db "  Bank:", "R", LOW(hCurROMBank), HIGH(hCurROMBank), "V", LOW(vCrashVBK), HIGH(vCrashVBK), "W", LOW(rSVBK), HIGH(rSVBK), " "
+	db "  Bank:", "R", LOW(RomBank), HIGH(RomBank), "V", LOW(vCrashVBK), HIGH(vCrashVBK), "W", LOW(rSVBK), HIGH(rSVBK), " "
 
 ; This is made to be as small as possible, since the footprint of this should be minimal.
 ; Unfortunately, I don't think I can do better..!
