@@ -16,8 +16,9 @@ SECTION "Rst $38 trap", ROM0
 
 ; Perform a soft-crash.
 Crash:: align 16, $38
-		di ; Doing this as soon as possible to avoid interrupts messing up.
-		jp HandleCrash
+	unreachable
+	di ; Doing this as soon as possible to avoid interrupts messing up.
+	jp HandleCrash
 
 
 	newcharmap crash_handler

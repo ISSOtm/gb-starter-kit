@@ -20,9 +20,12 @@ FIXFLAGS = -p ${PADVALUE} -i "${GAMEID}" -k "${LICENSEE}" -l ${OLDLIC} -m ${MBC}
 
 ROM = bin/${ROMNAME}.${ROMEXT}
 SRCS := $(call rwildcard,src,*.asm)
+OBJS := $(patsubst src/%.asm,obj/%.o,${SRCS})
+DEPFILES := ${OBJS:.o=.mk}
+DEBUGFILES := ${OBJS:.o=.dbg}
 
 include project.mk
-all: ${ROM}
+all: ${ROM} ${DEBUGFILES} bin/${ROMNAME}.dbg
 .PHONY: all
 
 clean:
@@ -59,15 +62,21 @@ obj/%.mk: src/%.asm
 	${RGBASM} ${ASFLAGS} -o ${@:.mk=.o} $< \
 	    -M $@ -MG -MP -MQ ${@:.mk=.o} -MQ $@
 ifeq ($(filter clean,${MAKECMDGOALS}),)
-include $(patsubst src/%.asm,obj/%.mk,${SRCS})
+include ${DEPFILES}
 endif
 SYMFILE := $(basename ${ROM}).sym
 MAPFILE := $(basename ${ROM}).map
-${ROM}: $(patsubst src/%.asm,obj/%.o,${SRCS})
+${ROM}: ${OBJS}
 	@mkdir -p "${@D}"
 	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
 	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ $^ \
 	&& ${RGBFIX} -v ${FIXFLAGS} $@
+obj/%.dbg: obj/%.o
+	@mkdir -p "${@D}"
+	${RGBASM} ${ASFLAGS} src/$*.asm -DPRINT_DEBUGFILE >$@
+bin/${ROMNAME}.dbg: ${SRCS}
+	echo @debugfile 1.0 >$@
+	printf '@include "../%s"\n' ${DEBUGFILES} >>$@
 hardware.inc/hardware.inc rgbds-structs/structs.asm:
 	@echo '$@ is not present; have you initialized submodules?'
 	@echo 'Run `git submodule update --init`,'
