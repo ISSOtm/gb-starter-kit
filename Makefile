@@ -23,7 +23,6 @@ SRCS := $(call rwildcard,src,*.asm)
 OBJS := $(patsubst src/%.asm,obj/%.o,${SRCS})
 DEPFILES := ${OBJS:.o=.mk}
 DEBUGFILES := ${OBJS:.o=.dbg}
-
 include project.mk
 all: ${ROM} ${DEBUGFILES} bin/${ROMNAME}.dbg
 .PHONY: all
@@ -66,14 +65,13 @@ include ${DEPFILES}
 endif
 SYMFILE := $(basename ${ROM}).sym
 MAPFILE := $(basename ${ROM}).map
-${ROM}: ${OBJS}
+${ROM}: $(patsubst src/%.asm,obj/%.o,${SRCS})
 	@mkdir -p "${@D}"
 	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
 	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ $^ \
 	&& ${RGBFIX} -v ${FIXFLAGS} $@
 obj/%.dbg: obj/%.o
-	@mkdir -p "${@D}"
-	${RGBASM} ${ASFLAGS} src/$*.asm -DPRINT_DEBUGFILE >$@
+	${RGBASM} ${ASFLAGS} src/$*.asm -DPRINT_DEBUGFILE
 bin/${ROMNAME}.dbg: ${SRCS}
 	echo @debugfile 1.0 >$@
 	printf '@include "../%s"\n' ${DEBUGFILES} >>$@
