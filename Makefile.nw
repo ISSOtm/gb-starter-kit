@@ -331,14 +331,48 @@ Notice that this recipe unconditionally assembles the build date file: that ensu
 <<Assembly rules>>=
 SYMFILE := $(basename ${ROM}).sym
 MAPFILE := $(basename ${ROM}).map
-${ROM}: $(patsubst src/%.asm,obj/%.o,${SRCS})
+${ROM}: src/tools/nb_used_banks.py ${OBJS}
 	@mkdir -p "${@D}"
 	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
-	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ $^ \
-	&& ${RGBFIX} -v ${FIXFLAGS} $@
+	${RGBLINK} ${LDFLAGS} -m ${MAPFILE}.tmp ${OBJS}
 @
 
-\pagebreak
+And here we start doing funky business.
+Why do we link the entire ROM, producing only a map file?
+Well, it's because of the ROM bank numbers.
+
+The program often needs to know which ROM bank is loaded, but unfortunately, there is no register that can be read to tell that info.
+So the program has to do that itself.
+The typical method is, for each bank switch, to write the ROM bank number twice: once to a variable (typically in HRAM) to keep track of which bank is now loaded, and once to the memory range that actually performs the write.\footnote{The order of the two operations matters, as doing them in the reverse order leaves a one-instruction window where an interrupt handler could fire and read the stale value from the HRAM variable!}
+
+This unfortunately costs two bytes and three cycles per bank switch, of which there can be a \emph{lot} within a frame; so, instead, gb-starter-kit offers an alternative mechanism: self-reporting ROM banks.
+Each ROM bank contains its own number, in a location consistent across all banks.
+The program can thus always read that location (named \texttt{RomBank} in gb-starter-kit), and know which ROM bank is currently loaded---for free!
+
+However, actually implementing that is a bit of an issue: we need to insert a byte into every ROM bank, but only if there is other data in said bank, to avoid unnecessarily making every ROM 4 MiB large.
+It sounds possible to patch in the bank numbers after calling \texttt{rgblink}, but there's no guarantee then that there is room in the bank for that number!
+Indeed, we need to properly \emph{reserve} some space in each bank.
+
+So, the strategy used here, is to first allocate one byte in each of the 255 ROM banks\footnote{ROM bank 0 is excluded, since it's non-switchable.}, then link, then count how many banks contain more than just that byte:
+
+<<Assembly rules>>=
+	NB_BANKS=$$(src/tools/nb_used_banks.py ${MAPFILE}.tmp) \
+@
+
+...then re-assemble the file providing those bank numbers, but telling it how many banks we will effectively need:
+
+<<Assembly rules>>=
+	&& ${RGBASM} ${ASFLAGS} -DNB_BANKS=$$NB_BANKS \
+	    -o obj/bank_numbers.o src/bank_numbers.asm
+	rm ${MAPFILE}.tmp
+@
+
+...before finally linking the ROM for real.
+
+<<Assembly rules>>=
+	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ ${OBJS} \
+	&& ${RGBFIX} -v ${FIXFLAGS} $@
+@
 
 \subsubsection{Debugfiles}
 
@@ -364,6 +398,7 @@ Thus, we also generate a “master file”, which includes all of the sub-files.
 
 <<Assembly rules>>=
 bin/${ROMNAME}.dbg: ${SRCS}
+	@mkdir -p "${@D}"
 	echo @debugfile 1.0 >$@
 	printf '@include "../%s"\n' ${DEBUGFILES} >>$@
 @
@@ -380,8 +415,6 @@ By default, cloning the repo does not initialise submodules (so they are empty);
 
 Note that the real paths aren't used!
 Since RGBASM fails to find the files, it outputs the path(s) as passed to \texttt{include}, not where the file would actually be found (e.g. \texttt{src/hardware.inc/hardware.inc}).
-
-\pagebreak % Otherwise the "header line" is on a different page than the code >_<
 
 <<Assembly rules>>=
 hardware.inc/hardware.inc rgbds-structs/structs.asm:
