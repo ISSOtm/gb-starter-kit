@@ -1,7 +1,7 @@
 .SUFFIXES:
 
 ifeq (${MAKE_VERSION},3.81)
-$(error This version of Make is buggy and may fail to compile. Please install a more recent version of Make.)
+.NOTPARALLEL:
 endif
 
 rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
@@ -67,11 +67,11 @@ SYMFILE := $(basename ${ROM}).sym
 MAPFILE := $(basename ${ROM}).map
 ${ROM}: src/tools/nb_used_banks.py ${OBJS}
 	@mkdir -p "${@D}"
-	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
+	${RGBASM} ${ASFLAGS} -o obj/lib/build_date.o src/lib/build_date.asm
 	${RGBLINK} ${LDFLAGS} -m ${MAPFILE}.tmp ${OBJS}
 	NB_BANKS=$$(src/tools/nb_used_banks.py ${MAPFILE}.tmp) \
 	&& ${RGBASM} ${ASFLAGS} -DNB_BANKS=$$NB_BANKS \
-	    -o obj/bank_numbers.o src/bank_numbers.asm
+	    -o obj/lib/bank_numbers.o src/lib/bank_numbers.asm
 	rm ${MAPFILE}.tmp
 	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ ${OBJS} \
 	&& ${RGBFIX} -v ${FIXFLAGS} $@
