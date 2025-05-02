@@ -69,13 +69,16 @@ ${ROM}: src/tools/nb_used_banks.py ${OBJS}
 	@mkdir -p "${@D}"
 	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
 	${RGBLINK} ${LDFLAGS} -m ${MAPFILE}.tmp ${OBJS}
-	NB_BANKS=$$($< ${MAPFILE}.tmp) && ${RGBASM} ${ASFLAGS} -o obj/bank_numbers.o src/bank_numbers.asm -DNB_BANKS=$$NB_BANKS
+	NB_BANKS=$$(src/tools/nb_used_banks.py ${MAPFILE}.tmp) \
+	&& ${RGBASM} ${ASFLAGS} -DNB_BANKS=$$NB_BANKS \
+	    -o obj/bank_numbers.o src/bank_numbers.asm
 	rm ${MAPFILE}.tmp
 	${RGBLINK} ${LDFLAGS} -m ${MAPFILE} -n ${SYMFILE} -o $@ ${OBJS} \
 	&& ${RGBFIX} -v ${FIXFLAGS} $@
 obj/%.dbg: obj/%.o
-	${RGBASM} ${ASFLAGS} src/$*.asm -DPRINT_DEBUGFILE
+	${RGBASM} ${ASFLAGS} src/$*.asm -DPRINT_DEBUGFILE >$@
 bin/${ROMNAME}.dbg: ${SRCS}
+	@mkdir -p "${@D}"
 	echo @debugfile 1.0 >$@
 	printf '@include "../%s"\n' ${DEBUGFILES} >>$@
 hardware.inc/hardware.inc rgbds-structs/structs.asm:
