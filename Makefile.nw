@@ -333,7 +333,7 @@ SYMFILE := $(basename ${ROM}).sym
 MAPFILE := $(basename ${ROM}).map
 ${ROM}: src/tools/nb_used_banks.py ${OBJS}
 	@mkdir -p "${@D}"
-	${RGBASM} ${ASFLAGS} -o obj/build_date.o src/assets/build_date.asm
+	${RGBASM} ${ASFLAGS} -o obj/lib/build_date.o src/lib/build_date.asm
 	${RGBLINK} ${LDFLAGS} -m ${MAPFILE}.tmp ${OBJS}
 @
 
@@ -363,7 +363,7 @@ So, the strategy used here, is to first allocate one byte in each of the 255 ROM
 
 <<Assembly rules>>=
 	&& ${RGBASM} ${ASFLAGS} -DNB_BANKS=$$NB_BANKS \
-	    -o obj/bank_numbers.o src/bank_numbers.asm
+	    -o obj/lib/bank_numbers.o src/lib/bank_numbers.asm
 	rm ${MAPFILE}.tmp
 @
 
