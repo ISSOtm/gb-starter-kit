@@ -417,7 +417,7 @@ Note that the real paths aren't used!
 Since RGBASM fails to find the files, it outputs the path(s) as passed to \texttt{include}, not where the file would actually be found (e.g. \texttt{src/hardware.inc/hardware.inc}).
 
 <<Assembly rules>>=
-hardware.inc/hardware.inc rgbds-structs/structs.asm:
+hardware.inc/hardware.inc rgbds-structs/structs.inc debugfile.inc/debugfile.inc:
 	@echo '$@ is not present; have you initialized submodules?'
 	@echo 'Run `git submodule update --init`,'
 	@echo 'then `make clean`,'
