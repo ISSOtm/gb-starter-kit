@@ -5,7 +5,7 @@ SECTION "Intro", ROMX
 
 Intro::
 ; Remove this line
-	rst $38
+	rst Crash
 
 ; Put your code here!
 	jr @
