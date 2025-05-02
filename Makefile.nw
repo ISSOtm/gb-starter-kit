@@ -323,7 +323,7 @@ Importantly also, \texttt{include} causes Make to restart from scratch after one
 
 \subsubsection{Linking and fixing the ROM}\label{sec:linking}
 
-Once all of the object files are generated, we can link them all together (notice the use of \texttt{\$\^{}}!), and fix the ROM.
+Once all of the object files are generated, we can link them all together, and fix the ROM.
 Two variables are used here (\texttt{SYMFILE} and \texttt{MAPFILE}), purely for readability's sake.
 
 Notice that this recipe unconditionally assembles the build date file: that ensures that the build date is always refreshed.
