@@ -81,7 +81,7 @@ bin/${ROMNAME}.dbg: ${SRCS}
 	@mkdir -p "${@D}"
 	echo @debugfile 1.0 >$@
 	printf '@include "../%s"\n' ${DEBUGFILES} >>$@
-hardware.inc/hardware.inc rgbds-structs/structs.asm:
+hardware.inc/hardware.inc rgbds-structs/structs.inc:
 	@echo '$@ is not present; have you initialized submodules?'
 	@echo 'Run `git submodule update --init`,'
 	@echo 'then `make clean`,'

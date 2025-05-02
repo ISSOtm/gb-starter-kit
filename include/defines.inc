@@ -7,7 +7,7 @@ INCLUDE "hardware.inc/hardware.inc"
 INCLUDE "debugfile.inc/debugfile.inc"
 	require_debugfile_inc_v 1.0
 
-INCLUDE "rgbds-structs/structs.asm"
+INCLUDE "rgbds-structs/structs.inc"
 
 
 ; A couple more hardware defines
