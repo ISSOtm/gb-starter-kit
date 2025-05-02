@@ -21,9 +21,11 @@ jobs:
         curl -L https://github.com/gbdev/rgbds/releases/download/v0.9.1/rgbds-0.9.1-linux-x86_64.tar.xz | tar xJC rgbds
         cd rgbds
         sudo ./install.sh
-    - name: Install RGBDS (macOS)
+    - name: Install RGBDS and Make (macOS)
       if: matrix.os == 'macos-latest'
-      run: brew install rgbds
+      run: |
+        brew install rgbds make
+        printf 'PATH=/opt/homebrew/opt/make/libexec/gnubin:%s\n' "$PATH" | tee -a "$GITHUB_ENV"
     - name: Checkout
       uses: actions/checkout@v4
       with:
