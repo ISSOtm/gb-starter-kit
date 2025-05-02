@@ -8,6 +8,9 @@ A customizable and ready-to-compile setup for Game Boy projects using RGBDS.
 
 **[The wiki](https://github.com/ISSOtm/gb-starter-kit/wiki) has information on how to use this project.**
 
+Each sub-directory contains documentation of its own contents, in the form of a `README.md` file.
+I suggest starting with `src/`.
+
 ## See also
 
 If you want something more barebones, check out [gb-boilerplate](https://github.com/ISSOtm/gb-boilerplate).
