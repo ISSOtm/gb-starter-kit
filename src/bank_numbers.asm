@@ -1,4 +1,4 @@
-INCLUDE "defines.asm"
+INCLUDE "defines.inc"
 
 IF !def(NB_BANKS)
 	def NB_BANKS equ 256

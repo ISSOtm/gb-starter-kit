@@ -1,4 +1,4 @@
-INCLUDE "defines.asm"
+INCLUDE "defines.inc"
 
 
 SECTION "WaitVBlank", ROM0

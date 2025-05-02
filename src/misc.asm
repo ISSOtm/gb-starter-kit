@@ -1,4 +1,4 @@
-INCLUDE "defines.asm"
+INCLUDE "defines.inc"
 
 
 ; TODO: for `{,LCD}Mem{set,cpy}`, switch to `dec c :: jr nz :: dec b :: jr nz` loops
