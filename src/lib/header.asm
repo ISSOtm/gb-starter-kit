@@ -9,7 +9,7 @@ hConsoleType:: db
 SECTION UNION "Shadow OAM", WRAM0,ALIGN[8]
 
 wShadowOAM::
-	ds NB_SPRITES * 4
+	ds OAM_COUNT * 4
 
 
 SECTION "Header", ROM0[$100]
@@ -97,7 +97,7 @@ Reset:: ; This is where the VBlank handler jumps to if Start+Select+B+A are all 
 	; This will get committed to hardware OAM after the end of the first
 	; frame, but the hardware doesn't display it, so that's fine.
 	ld hl, wShadowOAM
-	ld c, NB_SPRITES * 4
+	ld c, OAM_COUNT * 4
 	xor a
 	rst MemsetSmall
 	ld a, h ; ld a, HIGH(wShadowOAM)
@@ -113,7 +113,7 @@ SECTION "OAM DMA routine", ROMX
 ; It gets copied to HRAM and is called there from the VBlank handler.
 OAMDMA:
 	ldh [rDMA], a
-	ld a, NB_SPRITES
+	ld a, OAM_COUNT
 .wait
 	dec a
 	jr nz, .wait
