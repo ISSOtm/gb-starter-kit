@@ -6,7 +6,7 @@ INCLUDE "defines.inc"
 ;       This would require RGBDS to implement functions to remain convenient, though...
 
 
-INCLUDE "misc/rand.inc"
+INCLUDE "lib/rand.inc"
 EXPORT randstate ; Defined in the above, exported here to avoid modifying that file (so it can be updated more easily).
 
 
