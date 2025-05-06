@@ -13,7 +13,7 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-          # - windows-latest (The build is flaky there because of #1, unfortunately.)
+          - windows-latest
       fail-fast: false
     runs-on: ${{ matrix.os }}
     

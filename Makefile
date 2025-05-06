@@ -21,7 +21,6 @@ FIXFLAGS = -p ${PADVALUE} -i "${GAMEID}" -k "${LICENSEE}" -l ${OLDLIC} -m ${MBC}
 ROM = bin/${ROMNAME}.${ROMEXT}
 SRCS := $(call rwildcard,src,*.asm)
 OBJS := $(patsubst src/%.asm,obj/%.o,${SRCS})
-DEPFILES := ${OBJS:.o=.mk}
 DEBUGFILES := ${OBJS:.o=.dbg}
 include project.mk
 all: ${ROM} ${DEBUGFILES} bin/${ROMNAME}.dbg
@@ -42,29 +41,30 @@ assets/%.1bpp: assets/%.png
 assets/%.pb16: src/tools/pb16.py assets/%
 	@mkdir -p "${@D}"
 	$^ $@$
-assets/%.pb16.size: assets/%
+assets/%.pb16.size: assets/% assets/%.pb16
 	@mkdir -p "${@D}"
 	printf 'def NB_PB16_BLOCKS equ ((%u) + 15) / 16\n' \
 	    "$$(wc -c <$<)" >assets/$*.pb16.size
 assets/%.pb8: src/tools/pb8.py assets/%
 	@mkdir -p "${@D}"
 	$^ $@
-
-assets/%.pb8.size: assets/%
+assets/%.pb8.size: assets/% assets/%.pb8
 	@mkdir -p "${@D}"
 	printf 'def NB_PB8_BLOCKS equ ((%u) + 7) / 8\n' \
 	    "$$(wc -c <$<)" >assets/$*.pb8.size
-obj/%.o: obj/%.mk
-	@touch -c $@
-obj/%.mk: src/%.asm
-	@mkdir -p "${@D}"
-	${RGBASM} ${ASFLAGS} -o ${@:.mk=.o} $< \
-	    -M $@ -MG -MP -MQ ${@:.mk=.o} -MQ $@
+
 ifeq ($(filter clean,${MAKECMDGOALS}),)
-include ${DEPFILES}
+define DEP
+$(subst |,
+,$(shell ${RGBASM} ${ASFLAGS} $2 -M - -MG -MP -MQ $1 | tr '\n' '|'))
+endef
+$(foreach OBJ,${OBJS},$(eval $(call DEP,${OBJ},$(patsubst obj/%.o,src/%.asm,${OBJ}))))
 endif
 SYMFILE := $(basename ${ROM}).sym
 MAPFILE := $(basename ${ROM}).map
+obj/%.o: src/%.asm
+	@mkdir -p "${@D}"
+	${RGBASM} ${ASFLAGS} -o $@ $<
 ${ROM}: src/tools/nb_used_banks.py ${OBJS}
 	@mkdir -p "${@D}"
 	${RGBASM} ${ASFLAGS} -o obj/lib/build_date.o src/lib/build_date.asm
