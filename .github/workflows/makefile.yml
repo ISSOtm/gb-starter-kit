@@ -22,7 +22,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         mkdir rgbds
-        curl -L https://github.com/gbdev/rgbds/releases/download/v0.9.1/rgbds-0.9.1-linux-x86_64.tar.xz | tar xJC rgbds
+        curl -L https://github.com/gbdev/rgbds/releases/download/v0.9.4/rgbds-linux-x86_64.tar.xz | tar xJC rgbds
         cd rgbds
         sudo ./install.sh
     - name: Install RGBDS and Make (macOS)
@@ -35,8 +35,8 @@ jobs:
       shell: bash
       run: | # RGBDS needs to go into that directory to be picked up by Make as `rgb*` instead of needing `rgb*.exe`.
         mkdir rgbds
-        curl -LOJ https://github.com/gbdev/rgbds/releases/download/v0.9.1/rgbds-0.9.1-win64.zip
-        unzip -d /c/mingw64/bin rgbds-0.9.1-win64.zip
+        curl -LOJ https://github.com/gbdev/rgbds/releases/download/v0.9.4/rgbds-win64.zip
+        unzip -d /c/mingw64/bin rgbds-win64.zip
     - name: Checkout
       uses: actions/checkout@v4
       with:
