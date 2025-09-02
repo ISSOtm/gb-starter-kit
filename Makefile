@@ -13,10 +13,9 @@ RGBFIX  := ${RGBDS}rgbfix
 RGBGFX  := ${RGBDS}rgbgfx
 
 INCDIRS  := src/ include/
-WARNINGS := all extra
-ASFLAGS  = -p ${PADVALUE} $(addprefix -I,${INCDIRS}) $(addprefix -W,${WARNINGS})
-LDFLAGS  = -p ${PADVALUE}
-FIXFLAGS = -p ${PADVALUE} -i "${GAMEID}" -k "${LICENSEE}" -l ${OLDLIC} -m ${MBC} -n ${VERSION} -r ${SRAMSIZE} -t ${TITLE}
+ASFLAGS  = -p ${PADVALUE} $(addprefix -I,${INCDIRS}) -Wextra
+LDFLAGS  = -p ${PADVALUE} -Wall
+FIXFLAGS = -p ${PADVALUE} -i "${GAMEID}" -k "${LICENSEE}" -l ${OLDLIC} -m ${MBC} -n ${VERSION} -r ${SRAMSIZE} -t ${TITLE} -Wall
 
 ROM = bin/${ROMNAME}.${ROMEXT}
 SRCS := $(call rwildcard,src,*.asm)

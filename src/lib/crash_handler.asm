@@ -24,7 +24,7 @@ Crash:: align 16, $38
 	newcharmap crash_handler
 def CHARS equs "0123456789ABCDEF-GHIJKLMNOPQR:SUVWXYZabcdefghijklmnopqrTstuvwxyz! "
 FOR CHAR, STRLEN("{CHARS}")
-	charmap STRSUB("{CHARS}", CHAR + 1, 1), CHAR
+	charmap STRSLICE("{CHARS}", CHAR, CHAR + 1), CHAR
 ENDR
 
 def HEADER_WIDTH EQU 19
@@ -183,11 +183,11 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld de, .header
 	ld b, HEADER_HEIGHT
 .writeHeaderLine
-	ld a, " "
+	ld a, ' '
 	ld [hli], a
 	ld c, HEADER_WIDTH
 	rst MemcpySmall
-	ld a, " "
+	ld a, ' '
 	ld [hli], a
 	ld a, l
 	add a, SCRN_VX_B - HEADER_WIDTH - 2
@@ -196,7 +196,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	jr nz, .writeHeaderLine
 
 	; Blank line.
-	ld a, " "
+	ld a, ' '
 	ld c, SCRN_X_B + 1
 	rst MemsetSmall
 
@@ -210,7 +210,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	rst MemcpySmall
 	ldh a, [hConsoleType]
 	call .printHexA
-	ld a, " "
+	ld a, ' '
 	ld [hli], a
 	ld [hli], a
 	ld [hli], a
@@ -225,7 +225,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	rst MemcpySmall
 	pop bc
 	call .printHexBC
-	ld a, " "
+	ld a, ' '
 	ld [hli], a
 	ld [hli], a
 	ld [hli], a
@@ -263,18 +263,18 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	rst MemcpySmall
 	ld a, [wCrashIE]
 	call .printHexA
-	ld [hl], " "
+	ld [hl], ' '
 
 	ld l, LOW(vCrashDumpScreen.row15)
 	ld c, 7
 	rst MemcpySmall
 .writeBank
-	ld a, " "
+	ld a, ' '
 	ld [hli], a
 	ld a, [de]
 	inc de
 	ld [hli], a
-	cp " "
+	cp ' '
 	jr z, .banksDone
 	ld a, [de]
 	inc de
@@ -303,7 +303,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld [hli], a
 	dec c
 	jr nz, .writeBuildDate
-	ld a, " "
+	ld a, ' '
 	ld [hli], a
 
 	ld l, LOW(vCrashDumpScreen.row17)
@@ -481,7 +481,7 @@ ENDR
 	ld b, d
 	ld c, e
 	call .printHexBC
-	ld a, " "
+	ld a, ' '
 	ld [hli], a
 	ld [hli], a
 	ld a, e
@@ -494,7 +494,7 @@ ENDR
 	ld a, l
 	add a, SCRN_VX_B - SCRN_X_B - 1
 	ld l, a
-	ld a, " "
+	ld a, ' '
 	ld [hli], a
 .writeDumpWord
 	ld a, [de]
@@ -503,7 +503,7 @@ ENDR
 	ld a, [de]
 	inc de
 	call .printHexA
-	ld a, " "
+	ld a, ' '
 	ld [hli], a
 	bit 4, l
 	jr nz, .writeDumpWord
