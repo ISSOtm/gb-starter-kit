@@ -2,7 +2,7 @@
 ; First, let's include libraries.
 
 INCLUDE "hardware.inc/hardware.inc"
-	rev_Check_hardware_inc 4.0
+	rev_Check_hardware_inc 5.0
 
 INCLUDE "debugfile.inc/debugfile.inc"
 	require_debugfile_inc_v 1.0
