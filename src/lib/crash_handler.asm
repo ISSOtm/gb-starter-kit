@@ -44,9 +44,9 @@ HandleCrash:
 	ld [wCrashIE], a
 	ldh a, [rLCDC]
 	ld [wCrashLCDC], a
-	ld a, LCDCF_ON ; Make sure the LCD is turned on to avoid waiting infinitely.
+	ld a, LCDC_ENABLE ; Make sure the LCD is turned on to avoid waiting infinitely.
 	ldh [rLCDC], a
-	ld a, IEF_VBLANK
+	ld a, IE_VBLANK
 	ldh [rIE], a
 	ld a, 0 ; `xor a` would overwrite flags!
 	ldh [rIF], a ; No point in backing up that register, it's always changing.
@@ -98,13 +98,13 @@ HandleCrash:
 	inc a ; ld a, 1
 	ldh [rVBK], a
 	ld hl, vCrashDumpScreen
-	ld b, SCRN_Y_B
+	ld b, SCREEN_HEIGHT
 .writeAttrRow
 	xor a
-	ld c, SCRN_X_B + 1
+	ld c, SCREEN_WIDTH + 1
 	rst MemsetSmall
 	ld a, l
-	add a, SCRN_VX_B - SCRN_X_B - 1
+	add a, TILEMAP_WIDTH - SCREEN_WIDTH - 1
 	ld l, a
 	dec b
 	jr nz, .writeAttrRow
@@ -126,9 +126,9 @@ REPT 3 * 2
 ENDR
 	; TODO: SGB palettes?
 
-	ld a, SCRN_VY - SCRN_Y
+	ld a, TILEMAP_HEIGHT_PX - SCREEN_HEIGHT_PX
 	ldh [rSCY], a
-	ld a, SCRN_VX - SCRN_X - 4
+	ld a, TILEMAP_WIDTH_PX - SCREEN_WIDTH_PX - 4
 	ldh [rSCX], a
 
 	; Copy 1bpp font, compressed using PB8 by PinoBatch.
@@ -190,14 +190,14 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld a, ' '
 	ld [hli], a
 	ld a, l
-	add a, SCRN_VX_B - HEADER_WIDTH - 2
+	add a, TILEMAP_WIDTH - HEADER_WIDTH - 2
 	ld l, a
 	dec b
 	jr nz, .writeHeaderLine
 
 	; Blank line.
 	ld a, ' '
-	ld c, SCRN_X_B + 1
+	ld c, SCREEN_WIDTH + 1
 	rst MemsetSmall
 
 	; AF and console model.
@@ -233,7 +233,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	; Now, the two memory dumps!
 .writeDump
 	ld a, l
-	add a, SCRN_VX_B - SCRN_X_B - 1
+	add a, TILEMAP_WIDTH - SCREEN_WIDTH - 1
 	ld l, a
 	ld c, 4
 	rst MemcpySmall
@@ -307,11 +307,11 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld [hli], a
 
 	ld l, LOW(vCrashDumpScreen.row17)
-	ld c, SCRN_X_B + 1
+	ld c, SCREEN_WIDTH + 1
 	rst MemsetSmall
 
 	; Start displaying!
-	ld a, LCDCF_ON | LCDCF_BG9C00 | LCDCF_BGON
+	ld a, LCDC_ENABLE | LCDC_BG_9C00 | LCDC_BG_ON
 	ldh [rLCDC], a
 
 	xor a
@@ -327,11 +327,11 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 
 	; Poll joypad
 	ld c, LOW(rP1)
-	ld a, P1F_GET_DPAD
+	ld a, JOYP_GET_CTRL_PAD
 	call .poll
 	ld b, a
 	swap b
-	ld a, P1F_GET_BTN
+	ld a, JOYP_GET_BUTTONS
 	call .poll
 	and b
 	ld b, a
@@ -351,14 +351,14 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	and a
 	jr z, .unlocked
 	ld a, b
-	and PADF_B | PADF_A
+	and PAD_B | PAD_A
 	jr nz, .loop
 	dec hl
 	dec [hl]
 	jr .loop
 .unlocked
 	assert vUnlockCounter + 1 == vWhichDump
-	bit PADB_B, c
+	bit B_PAD_B, c
 	ld a, [hl]
 	jr nz, .noDumpSwitch
 	xor 2
@@ -374,7 +374,7 @@ INCLUDE "assets/crash_font.1bpp.pb8.size"
 	ld h, a
 	; Process input, compute 16-bit offset to add to current addr.
 	ld de, 0
-	bit PADB_START, c
+	bit B_PAD_START, c
 	jr nz, .noInc
 	inc de
 .noInc
@@ -492,7 +492,7 @@ ENDR
 	ld d, a
 .writeDumpLine
 	ld a, l
-	add a, SCRN_VX_B - SCRN_X_B - 1
+	add a, TILEMAP_WIDTH - SCREEN_WIDTH - 1
 	ld l, a
 	ld a, ' '
 	ld [hli], a
@@ -549,9 +549,9 @@ wCrashLCDC: db
 SECTION UNION "9C00 tilemap", VRAM[$9C00],BANK[0]
 
 ; Put the crash dump screen at the bottom-right of the 9C00 tilemap, since that tends to be unused space.
-	ds SCRN_VX_B * (SCRN_VY_B - SCRN_Y_B - 2) ; 2 rows reserved as scratch space.
+	ds TILEMAP_WIDTH * (TILEMAP_HEIGHT - SCREEN_HEIGHT - 2) ; 2 rows reserved as scratch space.
 
-	ds SCRN_X_B ; Try not to overwrite the window area!
+	ds SCREEN_WIDTH ; Try not to overwrite the window area!
 	ds 2 * 1 ; Free stack entries (we spill into the above by 1 entry, though :/)
 	; These are the initial values of the registers.
 	; They are popped off the stack when printed, freeing up stack space.
@@ -561,7 +561,7 @@ vCrashDE: dw
 vCrashHL: dw
 vCrashSP: dw
 
-	ds SCRN_X_B
+	ds SCREEN_WIDTH
 vHeldKeys: db ; Keys held on previous frame.
 vUnlockCounter: db ; How many frames until dumps are "unlocked".
 vWhichDump: db
@@ -570,11 +570,11 @@ vDumpSP: dw
 vCrashVBK: db
 	ds 4 ; Unused.
 
-	ds SCRN_VX_B - SCRN_X_B - 1
+	ds TILEMAP_WIDTH - SCREEN_WIDTH - 1
 vCrashDumpScreen:
-	ds SCRN_X_B + 1
-	FOR ROW, 1, SCRN_Y_B
-		ds SCRN_VX_B - SCRN_X_B - 1
+	ds SCREEN_WIDTH + 1
+	FOR ROW, 1, SCREEN_HEIGHT
+		ds TILEMAP_WIDTH - SCREEN_WIDTH - 1
 	.row{d:ROW}
-		ds SCRN_X_B + 1
+		ds SCREEN_WIDTH + 1
 	ENDR

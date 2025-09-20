@@ -79,7 +79,7 @@ LCDMemsetSmall::
 ; @return f:  Z set, C reset
 LCDMemsetSmall.fromB::
 :	ldh a, [rSTAT]
-	and STATF_BUSY
+	and STAT_BUSY
 	jr nz, :-
 	ld a, b
 	ld [hli], a
@@ -116,7 +116,7 @@ LCDMemsetFromD::
 	inc c
 .loop
 :	ldh a, [rSTAT]
-	and STATF_BUSY
+	and STAT_BUSY
 	jr nz, :-
 	ld a, d
 	ld [hli], a
@@ -139,7 +139,7 @@ SECTION "LCDMemcpySmall", ROM0
 ; @return f:  Z set, C reset
 LCDMemcpySmall::
 :	ldh a, [rSTAT]
-	and STATF_BUSY
+	and STAT_BUSY
 	jr nz, :-
 	ld a, [de] :: ld [hli], a :: inc de
 	dec c
@@ -162,7 +162,7 @@ LCDMemcpy::
 	dec bc :: inc b :: inc c
 .loop
 :	ldh a, [rSTAT]
-	and STATF_BUSY
+	and STAT_BUSY
 	jr nz, :-
 	ld a, [de] :: ld [hli], a :: inc de
 	dec c

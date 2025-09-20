@@ -35,7 +35,7 @@ Reset:: ; This is where the VBlank handler jumps to if Start+Select+B+A are all 
 	; Turn the LCD off, which requires waiting for VBlank.
 .waitVBlank
 	ldh a, [rLY]
-	cp SCRN_Y
+	cp SCREEN_HEIGHT_PX
 	jr c, .waitVBlank
 	xor a :: ldh [rLCDC], a
 	; Goal now: set up the minimum required to turn the LCD on again
@@ -78,7 +78,7 @@ Reset:: ; This is where the VBlank handler jumps to if Start+Select+B+A are all 
 	ld [rROMB0], a
 
 	; Select wanted interrupts here.
-	ld a, IEF_VBLANK
+	ld a, IE_VBLANK
 	ldh [rIE], a
 	xor a
 	ei ; Only takes effect after the following instruction.
@@ -88,7 +88,7 @@ Reset:: ; This is where the VBlank handler jumps to if Start+Select+B+A are all 
 	; xor a
 	ldh [hSCY], a
 	ldh [hSCX], a
-	ld a, LCDCF_ON | LCDCF_BGON
+	ld a, LCDC_ENABLE | LCDC_BG_ON
 	ldh [hLCDC], a
 	; And turn the LCD on!
 	ldh [rLCDC], a

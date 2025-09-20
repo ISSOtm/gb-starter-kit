@@ -10,8 +10,8 @@ SECTION "WaitVBlank", ROM0
 ; @destroy Every register
 WaitVBlank:: align 16, $08 ; Suitable for `rst WaitVBlank`.
 	runtime_assert ime, "`WaitVBlank` called with interrupts disabled!"
-	runtime_assert [{rIE}] & {IEF_VBLANK}, "`WaitVBlank` called with VBlank interrupt disabled!"
-	runtime_assert [{rLCDC}] & {LCDCF_ON}, "`WaitVBlank` called with LCD off!"
+	runtime_assert [{rIE}] & {IE_VBLANK}, "`WaitVBlank` called with VBlank interrupt disabled!"
+	runtime_assert [{rLCDC}] & {LCDC_ENABLE}, "`WaitVBlank` called with LCD off!"
 	; This function may seem magical: an infinite loop that somehow exits!?
 	; Like all magic, there's a secret to it:
 	;   the logic that exits this function is not in the function itself,
@@ -44,7 +44,7 @@ hOBP1:: db
 
 ; Keys that are currently being held, and that became held just this frame, respectively.
 ; Each bit represents a key, with that bit set meaning the key is pressed.
-; Button order: Down, Up, Left, Right, Start, select, B, A (see `PADF_*` constants in hardware.inc).
+; Button order: Down, Up, Left, Right, Start, select, B, A (see `PAD_*` constants in hardware.inc).
 ; Holding Up+Down or Left+Right is treated as if neither was held.
 hHeldKeys:: db
 hPressedKeys:: db
@@ -59,7 +59,7 @@ hCanSoftReset:: db
 hVBlankFlag:: db
 
 
-SECTION "VBlank handler stub", ROM0[$40]
+SECTION "VBlank handler stub", ROM0[INT_HANDLER_VBLANK]
 
 	push af
 	; First, copy shadow registers to their actual counterparts.
@@ -100,29 +100,29 @@ VBlankHandler:
 
 
 	ld c, LOW(rP1)
-	ld a, P1F_GET_DPAD
+	ld a, JOYP_GET_CTRL_PAD
 	call .readOneNibble
 	or $F0 ; Set 4 upper bits (they are garbage otherwise).
 	swap a ; Put D-pad buttons in upper nibble.
 	ld b, a
 
 	; Filter impossible D-pad combinations, and treat them as if neither key was pressed.
-	and PADF_UP | PADF_DOWN
+	and PAD_UP | PAD_DOWN
 	ld a, b
 	jr nz, .notUpAndDown
-	or PADF_UP | PADF_DOWN
+	or PAD_UP | PAD_DOWN
 	ld b, a
 .notUpAndDown
-	and PADF_LEFT | PADF_RIGHT
+	and PAD_LEFT | PAD_RIGHT
 	jr nz, .notLeftAndRight
 	ld a, b
-	or PADF_LEFT | PADF_RIGHT
+	or PAD_LEFT | PAD_RIGHT
 	ld b, a
 .notLeftAndRight
 
-	ld a, P1F_GET_BTN
+	ld a, JOYP_GET_BUTTONS
 	call .readOneNibble
-	and PADF_START | PADF_SELECT | PADF_A | PADF_B
+	and PAD_START | PAD_SELECT | PAD_A | PAD_B
 	jr z, .perhapsReset
 .dontReset
 	or $F0 ; Set 4 upper bits (they are garbage otherwise).
@@ -138,7 +138,7 @@ VBlankHandler:
 	ld b, a
 
 	; Release joypad. (This is especially important on SGB.)
-	ld a, P1F_GET_NONE
+	ld a, JOYP_GET_NONE
 	ldh [c], a
 
 	; Compute the keys that have just been pressed: they are...

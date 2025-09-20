@@ -48,10 +48,11 @@ FreezeSGBScreen::
 ; @destroy e
 SendPacketNoDelay::
     ; Packet transmission begins by sending $00 then $30
+    assert JOYP_SGB_START == 0
     xor a
-    ldh [rP1], a
-    ld a, $30
-    ldh [rP1], a
+    ldh [rJOYP], a
+    ld a, JOYP_SGB_FINISH
+    ldh [rJOYP], a
     
     ld b, SGB_PACKET_SIZE
 .sendByte
@@ -60,14 +61,15 @@ SendPacketNoDelay::
     ld e, a
 
 .sendBit
-    ld a, $10 ; 1 bits are sent with $10
+    ld a, JOYP_SGB_ONE ; 1 bits are sent with $10
     rr e  ; Rotate d and get its lower bit, two birds in one stone!
     jr c, .bitSet
+    assert JOYP_SGB_ZERO == JOYP_SGB_ONE * 2
     add a, a ; 0 bits are sent with $20
 .bitSet
-    ldh [rP1], a
-    ld a, $30 ; Terminate pulse
-    ldh [rP1], a
+    ldh [rJOYP], a
+    ld a, JOYP_SGB_FINISH ; Terminate pulse
+    ldh [rJOYP], a
     dec d
     jr nz, .sendBit
 
@@ -76,9 +78,9 @@ SendPacketNoDelay::
 
     ; Packets are terminated by a "STOP" 0 bit
     ld a, $20
-    ldh [rP1], a
-    ld a, $30
-    ldh [rP1], a
+    ldh [rJOYP], a
+    ld a, JOYP_SGB_FINISH
+    ldh [rJOYP], a
     ret
 
 SGBDelay::
@@ -109,7 +111,7 @@ FillScreenWithSGBMap::
     ld b, a ; ld b, 0
     ld hl, $9C00
 .writeRow
-    ld c, SCRN_X_B
+    ld c, SCREEN_WIDTH
 .writeTile
     ld a, b
     ld [hli], a
@@ -118,7 +120,7 @@ FillScreenWithSGBMap::
     dec c
     jr nz, .writeTile
     ld a, l
-    add a, SCRN_VX_B - SCRN_X_B
+    add a, TILEMAP_WIDTH - SCREEN_WIDTH
     ld l, a
     jr nc, .writeRow
     inc h
@@ -127,7 +129,7 @@ FillScreenWithSGBMap::
     ld a, %11100100
     ldh [hBGP], a
 SetupSGBLCDC::
-    ld a, LCDCF_ON | LCDCF_WINOFF | LCDCF_BG8000 | LCDCF_BG9C00 | LCDCF_OBJOFF | LCDCF_BGON
+    ld a, LCDC_ENABLE | LCDC_WIN_OFF | LCDC_BLOCK01 | LCDC_BG_9C00 | LCDC_OBJ_OFF | LCDC_BG_ON
     ldh [hLCDC], a
     ldh [rLCDC], a
     ret
